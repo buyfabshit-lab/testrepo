@@ -33,9 +33,9 @@ for (const file of assets) {
 }
 
 // Favicon: inline it too, so no /dime.jpg request is left behind.
-const icon = readFileSync(join(dist, "dime.jpg")).toString("base64");
+const icon = readFileSync(join(dist, "favicon.jpg")).toString("base64");
 html = html.replace(
-  '<link rel="icon" href="/dime.jpg" />',
+  '<link rel="icon" href="/favicon.jpg" />',
   `<link rel="icon" href="data:image/jpeg;base64,${icon}" />`,
 );
 // og:image must be an absolute URL; point it at the repo copy.
