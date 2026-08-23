@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { countdownParts, embedUrl } from "../lib/format";
-import defaultAvatar from "../assets/dime.jpg";
+import defaultAvatar from "../assets/dime.webp";
 import type { Settings } from "../lib/types";
 
 /** "twitch" reads wrong in a sentence; brand names are capitalised. */
@@ -78,7 +78,7 @@ export function Hero({
             )}
           </div>
 
-          <h1 className="font-display text-[clamp(2.75rem,9vw,5.5rem)] font-extrabold leading-[0.88] tracking-[-0.03em]">
+          <h1 className="display-caps text-[clamp(3.25rem,11vw,7rem)] font-black leading-[0.84]">
             <span className="block text-bone">{settings.display_name}</span>
             <span
               className="block bg-clip-text text-transparent"

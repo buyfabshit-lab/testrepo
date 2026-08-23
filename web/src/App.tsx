@@ -15,6 +15,7 @@ import { Backdrop } from "./components/Backdrop";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { Section } from "./components/Section";
+import { Ticker } from "./components/Ticker";
 import { ChatPanel } from "./components/ChatPanel";
 import { PollCard } from "./components/PollCard";
 import { FanWall } from "./components/FanWall";
@@ -84,6 +85,8 @@ export default function App() {
           hype={reactions.recentCount}
           onJumpToChat={jumpToChat}
         />
+
+        <Ticker name={settings.display_name} location={settings.location} />
 
         {!isConfigured && <ConfigNotice />}
 

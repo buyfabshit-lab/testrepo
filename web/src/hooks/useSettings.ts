@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { isConfigured, supabase } from "../lib/supabase";
-import defaultAvatar from "../assets/dime.jpg";
+import defaultAvatar from "../assets/dime.webp";
 import type { Settings } from "../lib/types";
 
 const FALLBACK: Settings = {

@@ -30,7 +30,7 @@ export function Backdrop({ live }: { live: boolean }) {
         className="absolute bottom-[-25%] left-[25%] h-[60vmax] w-[60vmax] rounded-full blur-[140px]"
         style={{
           background:
-            "radial-gradient(circle, color-mix(in oklab, #7c3aed 45%, transparent), transparent 64%)",
+            "radial-gradient(circle, color-mix(in oklab, #7a0e1d 65%, transparent), transparent 64%)",
           opacity: 0.24,
           animation: "drift-c 30s ease-in-out infinite alternate",
         }}
