@@ -141,7 +141,9 @@ export function Hero({
           )}
         </div>
 
-        <div className="relative min-w-0">
+        {/* On phones the portrait leads — her face is the first thing the
+            screen shows. The two-column desktop layout is unchanged. */}
+        <div className="relative order-first min-w-0 lg:order-none">
           <div className="relative overflow-hidden rounded-[28px] glass p-2">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-ink sm:aspect-video lg:aspect-[4/5]">
               {settings.is_live && embed ? (

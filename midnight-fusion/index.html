@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MIDNIGHT FUSION</title>
+<meta name="description" content="The label that runs after midnight. DIME is the signal. The floor is open."/>
+<meta name="theme-color" content="#05060e"/>
+<style>
+@font-face{font-family:'Big Shoulders';font-weight:100 900;font-display:swap;src:url(__FONT_DISPLAY__) format('woff2-variations')}
+@font-face{font-family:'Archivo';font-weight:100 900;font-display:swap;src:url(__FONT_BODY__) format('woff2-variations')}
+@font-face{font-family:'Space Mono';font-weight:400;font-display:swap;src:url(__FONT_MONO__) format('woff2')}
+@font-face{font-family:'Space Mono';font-weight:700;font-display:swap;src:url(__FONT_MONO_BOLD__) format('woff2')}
+:root{
+  --night:#05060e; --panel:#0c0e1c; --edge:#1d2036;
+  --bone:#f2eef7; --dim:#8f8aa0;
+  --red:#e11227; --red-hi:#ff4d5e;
+  --violet:#7b2eff; --violet-hi:#a56bff;
+  --gold:#f0a92b;
+  --display:'Big Shoulders','Arial Narrow',sans-serif;
+  --body:'Archivo','Helvetica Neue',sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--night);color:var(--bone);font-family:var(--body);font-size:16px;line-height:1.6;overflow-x:hidden}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;line-height:.9;font-weight:900}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font-family:var(--body);cursor:pointer}
+:focus-visible{outline:3px solid var(--violet-hi);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.fuse{background:linear-gradient(95deg,var(--red-hi),var(--violet-hi));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* nav */
+#nav{position:fixed;inset:0 0 auto 0;z-index:90;background:rgba(5,6,14,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--edge)}
+#nav .row{display:flex;align-items:center;justify-content:space-between;height:62px}
+.brand{font-family:var(--display);font-weight:900;font-size:20px;letter-spacing:.04em;text-transform:uppercase}
+.brand em{font-style:normal;color:var(--violet-hi)}
+.links{display:flex;gap:24px;align-items:center}
+.links a{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);transition:color .2s}
+.links a:hover{color:var(--bone)}
+.cta{background:var(--red);color:#fff;padding:9px 20px;font-weight:700;font-size:13px;border:0;border-radius:999px;transition:transform .15s,box-shadow .2s}
+.cta:hover{transform:translateY(-1px);box-shadow:0 8px 30px -8px var(--red)}
+@media(max-width:760px){.links a{display:none}.links a.keep{display:block}}
+
+/* hero */
+#hero{position:relative;padding:130px 0 60px;overflow:hidden}
+#hero::before{content:'';position:absolute;inset:-20%;background:
+ radial-gradient(45% 40% at 18% 20%,rgba(225,18,39,.28),transparent 60%),
+ radial-gradient(50% 45% at 85% 65%,rgba(123,46,255,.26),transparent 60%);pointer-events:none}
+.hgrid{display:grid;gap:44px;align-items:center;grid-template-columns:1.2fr 1fr;position:relative}
+@media(max-width:860px){.hgrid{grid-template-columns:1fr}}
+.kicker{display:inline-flex;gap:12px;align-items:center;border:1px solid var(--edge);border-radius:999px;padding:8px 16px;background:rgba(12,14,28,.7)}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--dim)}
+.dot.on{background:var(--red);box-shadow:0 0 12px var(--red)}
+#hero h1{font-size:clamp(3.6rem,11vw,7.5rem);margin:22px 0 18px}
+.lede{max-width:34rem;color:var(--dim);font-size:17px}
+.hero-ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.ghost{border:1px solid var(--edge);background:transparent;color:var(--bone);padding:9px 20px;border-radius:999px;font-weight:700;font-size:13px}
+.ghost:hover{border-color:var(--violet-hi)}
+.portrait{position:relative;border:1px solid var(--edge);background:var(--panel);border-radius:22px;padding:10px}
+.portrait img{border-radius:14px;width:100%;object-fit:cover;aspect-ratio:4/5;object-position:top}
+.portrait .tag{position:absolute;left:22px;bottom:22px;display:inline-block;background:rgba(5,6,14,.82);border:1px solid var(--edge);border-radius:999px;padding:7px 14px;backdrop-filter:blur(4px)}
+.tape{position:relative;left:50%;width:100vw;transform:translateX(-50%) rotate(.5deg);background:linear-gradient(90deg,var(--red),var(--violet));padding:10px 0;overflow:hidden;margin-top:54px}
+.tape .in{display:flex;width:max-content;white-space:nowrap;animation:mq 30s linear infinite}
+.tape span{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:14px;color:#05060e;padding-right:8px}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* sections */
+section{padding:74px 0}
+.eyebrow{color:var(--red-hi);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+h2{font-size:clamp(2.4rem,6vw,4rem);margin:8px 0 14px}
+.sub{color:var(--dim);max-width:36rem}
+
+/* creed */
+.creed{display:grid;gap:18px;grid-template-columns:repeat(3,1fr);margin-top:34px}
+@media(max-width:860px){.creed{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:18px;padding:26px}
+.card .num{font-family:var(--mono);color:var(--violet-hi);font-size:12px;letter-spacing:.2em}
+.card h3{font-size:1.8rem;margin:10px 0 8px}
+.card p{color:var(--dim);font-size:15px}
+
+/* floor (listings) */
+.floor{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));margin-top:34px}
+.lot{background:var(--panel);border:1px solid var(--edge);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.lot .ph{aspect-ratio:1/1;background:#101226 center/cover no-repeat;display:flex;align-items:center;justify-content:center}
+.lot .ph span{font-family:var(--display);font-weight:900;text-transform:uppercase;color:#2c2f52;font-size:1.6rem;padding:0 18px;text-align:center}
+.lot .b{padding:16px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.lot h3{font-size:1.25rem}
+.lot .meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:auto}
+.bidv{font-family:var(--display);font-weight:900;font-size:1.5rem}
+.empty{border:1px dashed var(--edge);border-radius:18px;padding:44px;text-align:center;color:var(--dim);margin-top:34px}
+
+/* wall */
+.postbox{background:var(--panel);border:1px solid var(--edge);border-radius:18px;padding:18px;margin-top:30px}
+.postbox textarea{width:100%;background:transparent;border:0;color:var(--bone);font-family:var(--body);font-size:15px;resize:none;outline:0;min-height:64px}
+.postrow{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--edge);padding-top:12px;margin-top:8px}
+.wallgrid{columns:3 260px;column-gap:16px;margin-top:24px}
+.note{break-inside:avoid;background:var(--panel);border:1px solid var(--edge);border-radius:16px;padding:18px;margin-bottom:16px}
+.note p{font-size:15px}
+.note .who{display:flex;justify-content:space-between;margin-top:12px;align-items:center}
+.heart{background:none;border:1px solid var(--edge);color:var(--dim);border-radius:999px;padding:4px 12px;font-size:12px}
+.heart.done{color:var(--red-hi);border-color:var(--red)}
+
+/* drops */
+.drops{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-top:34px}
+.drop{background:var(--panel);border:1px solid var(--edge);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:8px}
+.drop h3{font-size:1.35rem}
+.price{font-family:var(--display);font-weight:900;font-size:1.6rem;color:var(--gold)}
+
+/* signal */
+#signal .box{background:linear-gradient(140deg,rgba(225,18,39,.12),rgba(123,46,255,.12)),var(--panel);border:1px solid var(--edge);border-radius:22px;padding:38px;display:flex;flex-wrap:wrap;gap:30px;align-items:center;justify-content:space-between;margin-top:30px}
+.count{display:flex;gap:22px}
+.count div{text-align:center}
+.count b{font-family:var(--display);font-weight:900;font-size:2.4rem;display:block}
+.count i{font-family:var(--mono);font-style:normal;font-size:10px;letter-spacing:.2em;color:var(--dim)}
+
+footer{border-top:1px solid var(--edge);padding:50px 0 90px;margin-top:40px}
+footer .big{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(2rem,7vw,4.6rem);line-height:.9}
+.footrow{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:26px;align-items:center}
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap row">
+  <a class="brand" href="#hero">MIDNIGHT<em>FUSION</em></a>
+  <div class="links">
+    <a href="#floor">The Floor</a><a href="#wall">The Wall</a><a href="#drops">Drops</a><a href="#signal">The Signal</a>
+    <a class="keep" href="https://dime-live.netlify.app" target="_blank" rel="noopener"><button class="cta">DIME Live</button></a>
+  </div>
+</div></nav>
+
+<section id="hero"><div class="wrap">
+  <div class="hgrid">
+    <div>
+      <span class="kicker"><span class="dot" id="liveDot"></span><span class="mono" id="liveText">checking the signal…</span></span>
+      <h1>DIME IS<br/><span class="fuse">THE SIGNAL</span></h1>
+      <p class="lede">Midnight Fusion is the label that runs after everyone else logs off. No ad spend, no gatekeepers, no polite hours. DIME is the face on the transmission — the floor underneath belongs to everyone who shows up with work.</p>
+      <div class="hero-ctas">
+        <a href="https://dime-live.netlify.app" target="_blank" rel="noopener"><button class="cta">Enter the room</button></a>
+        <a href="#floor"><button class="ghost">See the floor</button></a>
+      </div>
+    </div>
+    <div class="portrait">
+      <img src="__PORTRAIT__" alt="DIME"/>
+      <div class="tag"><span class="mono" style="color:var(--red-hi)">DIME · NEW YORK</span></div>
+    </div>
+  </div>
+  <div class="tape" aria-hidden="true"><div class="in"><span id="tapeA"></span><span id="tapeB"></span></div></div>
+</div></section>
+
+<section id="creed"><div class="wrap">
+  <p class="eyebrow">what this is</p>
+  <h2>Nobody signed us.<br/>So we <span class="fuse">became the label.</span></h2>
+  <div class="creed">
+    <div class="card"><p class="num">01 / THE LABEL</p><h3>Midnight Fusion</h3><p>Started after hours with a phone, a printer, and no permission slip. We put out work when it's ready — not when a quarter ends.</p></div>
+    <div class="card"><p class="num">02 / THE FACE</p><h3>Dime</h3><p>Late nights, loud games, louder chat. When the dot turns red, the transmission is live and the room fills up. She is the signal; you are the noise floor.</p></div>
+    <div class="card"><p class="num">03 / THE FLOOR</p><h3>Yours</h3><p>Put work up, bid on what moves you, pin your week to the wall. Light rules — just don't be the reason this place gets shut down.</p></div>
+  </div>
+</div></section>
+
+<section id="floor"><div class="wrap">
+  <p class="eyebrow">the floor</p>
+  <h2>Put it up. <span class="fuse">Bid it out.</span></h2>
+  <p class="sub">Live listings from the network floor. Bidding runs on <a href="https://skrewu.com" target="_blank" rel="noopener" style="color:var(--violet-hi)">skrewu.com</a> while this front is in preview — what you see here is the real board, live.</p>
+  <div class="floor" id="floorGrid"></div>
+  <div class="empty" id="floorEmpty" hidden>Nothing on the floor right now. First to list owns the silence.</div>
+</div></section>
+
+<section id="wall"><div class="wrap">
+  <p class="eyebrow">memory</p>
+  <h2>The wall <span class="fuse">remembers.</span></h2>
+  <p class="sub">Signed by everyone who pulled up. Same wall as the DIME room — one memory, two doors.</p>
+  <div class="postbox">
+    <textarea id="wallText" maxlength="500" placeholder="Leave something. It sticks around."></textarea>
+    <div class="postrow"><span class="mono" id="wallAs">signing as …</span><button class="cta" id="wallSend">Sign it</button></div>
+  </div>
+  <div class="wallgrid" id="wallGrid"></div>
+</div></section>
+
+<section id="drops"><div class="wrap">
+  <p class="eyebrow">merch</p>
+  <h2>Current <span class="fuse">drops.</span></h2>
+  <div class="drops" id="dropGrid"></div>
+</div></section>
+
+<section id="signal"><div class="wrap">
+  <p class="eyebrow">the signal</p>
+  <h2 id="sigTitle">Signal check.</h2>
+  <div class="box">
+    <div><p class="mono" id="sigLabel">next transmission</p><p style="font-size:18px;margin-top:6px" id="sigDetail">—</p></div>
+    <div class="count" id="sigCount" hidden>
+      <div><b id="cd">00</b><i>days</i></div><div><b id="ch">00</b><i>hrs</i></div>
+      <div><b id="cm">00</b><i>min</i></div><div><b id="cs">00</b><i>sec</i></div>
+    </div>
+    <a id="sigCta" href="https://dime-live.netlify.app" target="_blank" rel="noopener"><button class="cta">Follow the signal</button></a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p class="big">You don't ask.<br/><span class="fuse">You pull up.</span></p>
+  <div class="footrow">
+    <span class="mono">© Midnight Fusion · New York · after hours</span>
+    <span class="mono"><a href="https://dime-live.netlify.app" style="color:var(--bone)">DIME live</a> · <a href="https://skrewu.com" style="color:var(--bone)">skrew u</a></span>
+  </div>
+</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// Same NW2 project as skrewu.com and dime-live; the publishable key is
+// browser-safe by design (RLS decides what it can touch).
+const URL_ = 'https://qmztuagvxopahowexrum.supabase.co';
+const KEY_ = 'sb_publishable_cbwgMdVv6XDxLp0WOBsM-w_irvs7BAh';
+const sb = window.supabase ? window.supabase.createClient(URL_, KEY_) : null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ticker
+const line = 'MIDNIGHT FUSION • DIME IS THE SIGNAL • NEW YORK • AFTER HOURS • ';
+$('tapeA').textContent = line.repeat(5); $('tapeB').textContent = line.repeat(5);
+
+// anonymous identity, shared shape with the DIME room
+let fan; try { fan = JSON.parse(localStorage.getItem('dime.fan.v1')); } catch {}
+if (!fan || !fan.id) {
+  fan = { id: (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)),
+          handle: 'nightowl' + Math.floor(Math.random()*90+10), hue: 262 };
+  try { localStorage.setItem('dime.fan.v1', JSON.stringify(fan)); } catch {}
+}
+$('wallAs').textContent = 'signing as ' + fan.handle;
+let hearted; try { hearted = new Set(JSON.parse(localStorage.getItem('dime.hearted.v1')||'[]')); } catch { hearted = new Set(); }
+
+async function loadSignal(){
+  if (!sb) return;
+  const { data } = await sb.from('dime_settings').select('*').eq('id',1).maybeSingle();
+  if (!data) return;
+  const live = !!data.is_live;
+  $('liveDot').className = 'dot' + (live ? ' on' : '');
+  $('liveText').textContent = live ? 'transmitting right now' : 'signal dark — floor stays open';
+  if (live){
+    $('sigTitle').textContent = 'She’s on right now.';
+    $('sigLabel').textContent = 'live';
+    $('sigDetail').textContent = data.stream_title || 'no title, all signal';
+    $('sigCta').firstElementChild.textContent = 'Watch live';
+    if (data.stream_url) $('sigCta').href = data.stream_url;
+  } else if (data.next_stream_at){
+    $('sigTitle').textContent = 'Next transmission.';
+    $('sigDetail').textContent = data.stream_title || '—';
+    $('sigCount').hidden = false;
+    const t = new Date(data.next_stream_at).getTime();
+    const tick = () => { const ms = Math.max(0, t - Date.now());
+      $('cd').textContent = String(Math.floor(ms/864e5)).padStart(2,'0');
+      $('ch').textContent = String(Math.floor(ms%864e5/36e5)).padStart(2,'0');
+      $('cm').textContent = String(Math.floor(ms%36e5/6e4)).padStart(2,'0');
+      $('cs').textContent = String(Math.floor(ms%6e4/1e3)).padStart(2,'0'); };
+    tick(); setInterval(tick, 1000);
+  }
+}
+
+async function loadFloor(){
+  if (!sb) return;
+  const { data } = await sb.from('listings').select('*').order('created_at',{ascending:false}).limit(8);
+  const grid = $('floorGrid');
+  if (!data || !data.length){ $('floorEmpty').hidden = false; return; }
+  grid.innerHTML = data.map(l => `
+    <article class="lot">
+      <div class="ph" ${l.photo_url ? `style="background-image:url('${esc(l.photo_url)}')"` : ''}>${l.photo_url ? '' : `<span>${esc(l.title)}</span>`}</div>
+      <div class="b"><h3>${esc(l.title)}</h3>
+        <span class="mono">by ${esc(l.seller || 'the floor')}</span>
+        <div class="meta"><span class="mono">current bid</span><span class="bidv">$${Number(l.current_bid ?? l.start_price ?? 0).toFixed(0)}</span></div>
+      </div>
+    </article>`).join('');
+}
+
+function noteHtml(p){
+  const done = hearted.has(p.id);
+  return `<div class="note"><p>${esc(p.body)}</p>
+    <div class="who"><span class="mono" style="color:hsl(${p.hue??262} 80% 70%)">${esc(p.handle)}</span>
+    <button class="heart${done?' done':''}" data-id="${p.id}" data-hearts="${p.hearts}">♥ ${p.hearts}</button></div></div>`;
+}
+
+async function loadWall(){
+  if (!sb) return;
+  const { data } = await sb.from('dime_wall_posts').select('*').order('created_at',{ascending:false}).limit(18);
+  if (data) $('wallGrid').innerHTML = data.map(noteHtml).join('');
+}
+
+$('wallGrid').addEventListener('click', async (e) => {
+  const b = e.target.closest('.heart'); if (!b || !sb) return;
+  const id = Number(b.dataset.id);
+  if (hearted.has(id)) return;
+  hearted.add(id);
+  try { localStorage.setItem('dime.hearted.v1', JSON.stringify([...hearted])); } catch {}
+  b.classList.add('done'); b.textContent = '♥ ' + (Number(b.dataset.hearts)+1);
+  await sb.from('dime_wall_hearts').insert({ post_id: id, fan_id: fan.id });
+});
+
+$('wallSend').addEventListener('click', async () => {
+  const t = $('wallText').value.trim(); if (!t || !sb) return;
+  $('wallText').value = '';
+  const { error } = await sb.from('dime_wall_posts').insert({ fan_id: fan.id, handle: fan.handle, body: t.slice(0,500), hue: fan.hue });
+  if (error) { $('wallText').value = t; alert(error.message.includes('Rate limit') ? 'Easy — the wall needs a minute.' : 'Didn’t stick. Try again.'); return; }
+  loadWall();
+});
+
+async function loadDrops(){
+  if (!sb) return;
+  const { data } = await sb.from('dime_products').select('*').eq('is_active',true).order('position').limit(6);
+  if (!data) return;
+  $('dropGrid').innerHTML = data.map(p => `
+    <a class="drop" href="https://dime-live.netlify.app#shop" target="_blank" rel="noopener">
+      <span class="mono">${esc((p.tags||[])[0] || 'drop')}</span><h3>${esc(p.name)}</h3>
+      <span class="price">$${(p.price_cents/100).toFixed(0)}</span></a>`).join('');
+}
+
+loadSignal(); loadFloor(); loadWall(); loadDrops();
+</script>
+</body>
+</html>
