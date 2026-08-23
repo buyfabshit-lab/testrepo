@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isConfigured, supabase } from "../lib/supabase";
+import defaultAvatar from "../assets/dime.jpg";
 import type { Settings } from "../lib/types";
 
 const FALLBACK: Settings = {
@@ -7,7 +8,7 @@ const FALLBACK: Settings = {
   display_name: "DIME",
   tagline: "late nights, loud games, louder chat",
   bio: null,
-  avatar_url: "/dime.jpg",
+  avatar_url: defaultAvatar,
   location: "New York",
   timezone: "America/New_York",
   is_live: false,
@@ -34,7 +35,9 @@ export function useSettings() {
 
     void (async () => {
       const { data } = await supabase.from("dime_settings").select("*").eq("id", 1).maybeSingle();
-      if (alive && data) setSettings({ ...FALLBACK, ...data });
+      if (alive && data) {
+        setSettings({ ...FALLBACK, ...data, avatar_url: data.avatar_url ?? defaultAvatar });
+      }
       if (alive) setLoading(false);
     })();
 
@@ -45,7 +48,13 @@ export function useSettings() {
         { event: "*", schema: "public", table: "dime_settings" },
         (payload) => {
           const next = payload.new as Settings | null;
-          if (next && next.id === 1) setSettings((prev) => ({ ...prev, ...next }));
+          if (next && next.id === 1) {
+            setSettings((prev) => ({
+              ...prev,
+              ...next,
+              avatar_url: next.avatar_url ?? defaultAvatar,
+            }));
+          }
         },
       )
       .subscribe();

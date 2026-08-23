@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { countdownParts, embedUrl } from "../lib/format";
+import defaultAvatar from "../assets/dime.jpg";
 import type { Settings } from "../lib/types";
 
 /** "twitch" reads wrong in a sentence; brand names are capitalised. */
@@ -154,7 +155,7 @@ export function Hero({
               ) : (
                 <>
                   <img
-                    src={settings.avatar_url ?? "/dime.jpg"}
+                    src={settings.avatar_url ?? defaultAvatar}
                     alt={settings.display_name}
                     className="absolute inset-0 h-full w-full object-cover object-top"
                     loading="eager"
