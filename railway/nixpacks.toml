@@ -1,0 +1,15 @@
+# Pin Node 22 for the seedance-2-generator service.
+# next@16 / react@19 require Node >=18.18; Node 22 is what the build was
+# verified against (npm 10.9.7).
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
