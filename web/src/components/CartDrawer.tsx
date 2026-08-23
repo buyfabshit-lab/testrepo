@@ -9,28 +9,29 @@ export function CartDrawer({
   cart,
   setQty,
   subtotal,
-  placeOrder,
-  placing,
+  checkout,
+  busy,
   error,
-  orderId,
+  outcome,
+  onDismissOutcome,
 }: {
   open: boolean;
   onClose: () => void;
   cart: CartLine[];
   setQty: (productId: string, qty: number) => void;
   subtotal: number;
-  placeOrder: (email: string, note: string) => Promise<boolean>;
-  placing: boolean;
+  checkout: (note: string) => Promise<boolean>;
+  busy: boolean;
   error: string | null;
-  orderId: string | null;
+  outcome: "success" | "cancelled" | null;
+  onDismissOutcome: () => void;
 }) {
-  const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || placing) return;
-    await placeOrder(email, note);
+    if (busy) return;
+    await checkout(note);
   };
 
   return (
@@ -70,15 +71,25 @@ export function CartDrawer({
             </div>
 
             <div className="thin-scroll flex-1 overflow-y-auto px-6 py-5">
-              {orderId ? (
+              {outcome === "cancelled" && (
+                <p className="mb-4 rounded-xl bg-white/5 px-4 py-3 text-xs leading-relaxed text-ash">
+                  Checkout cancelled — nothing was charged. Your cart is as you left it.
+                </p>
+              )}
+              {outcome === "success" ? (
                 <div className="rounded-2xl bg-hot-500/10 p-5 text-center">
-                  <p className="font-display text-lg font-bold text-bone">Order in.</p>
+                  <p className="font-display text-lg font-bold text-bone">Paid. Thank you.</p>
                   <p className="mt-2 text-sm text-ash">
-                    Reference <span className="font-mono text-bone/90">{orderId}</span>.
-                    DIME will email you at{" "}
-                    <span className="text-bone/90">{email}</span> to settle payment and
-                    shipping.
+                    Stripe has your payment and your receipt is on its way by email.
+                    DIME packs and ships from New York.
                   </p>
+                  <button
+                    type="button"
+                    onClick={onDismissOutcome}
+                    className="mt-4 rounded-full bg-white/8 px-4 py-2 text-xs font-medium text-bone/85"
+                  >
+                    Keep shopping
+                  </button>
                 </div>
               ) : cart.length === 0 ? (
                 <p className="pt-20 text-center text-sm text-ash">Nothing in here yet.</p>
@@ -124,7 +135,7 @@ export function CartDrawer({
               )}
             </div>
 
-            {cart.length > 0 && !orderId && (
+            {cart.length > 0 && outcome !== "success" && (
               <form onSubmit={submit} className="border-t border-white/8 p-6">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm text-ash">Subtotal</span>
@@ -134,34 +145,25 @@ export function CartDrawer({
                 </div>
 
                 <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email for the invoice"
-                  aria-label="Email"
-                  className="mt-4 w-full rounded-xl bg-white/5 px-4 py-3 text-sm text-bone outline-none ring-hot-500/60 placeholder:text-ash/70 focus:ring-2"
-                />
-                <input
                   value={note}
                   onChange={(e) => setNote(e.target.value.slice(0, 500))}
                   placeholder="size, colour, anything else (optional)"
                   aria-label="Order note"
-                  className="mt-2 w-full rounded-xl bg-white/5 px-4 py-3 text-sm text-bone outline-none ring-hot-500/60 placeholder:text-ash/70 focus:ring-2"
+                  className="mt-4 w-full rounded-xl bg-white/5 px-4 py-3 text-sm text-bone outline-none ring-hot-500/60 placeholder:text-ash/70 focus:ring-2"
                 />
 
                 {error && <p className="mt-2 text-xs text-hot-400">{error}</p>}
 
                 <button
                   type="submit"
-                  disabled={placing || !email.trim()}
+                  disabled={busy}
                   className="mt-4 w-full rounded-full bg-hot-500 px-5 py-3.5 text-sm font-semibold text-white transition glow-hot disabled:cursor-not-allowed disabled:bg-white/8 disabled:text-ash disabled:shadow-none"
                 >
-                  {placing ? "Sending…" : "Reserve this order"}
+                  {busy ? "Taking you to Stripe…" : "Checkout"}
                 </button>
                 <p className="mt-2.5 text-center text-[11px] leading-relaxed text-ash">
-                  No card taken here. The order is recorded and DIME follows up by email
-                  to take payment.
+                  Secure payment handled by Stripe. Email and shipping address are
+                  collected there — this page never sees your card.
                 </p>
               </form>
             )}

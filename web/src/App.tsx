@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isConfigured } from "./lib/supabase";
 import { loadFan, saveFan, type Fan } from "./lib/fan";
 
@@ -47,6 +47,12 @@ export default function App() {
     setFan(next);
     saveFan(next);
   }, []);
+
+  // Stripe returns the shopper to the bare site URL, so surface the result by
+  // opening the drawer rather than leaving them wondering whether it worked.
+  useEffect(() => {
+    if (shop.outcome) setCartOpen(true);
+  }, [shop.outcome]);
 
   const jumpToChat = useCallback(() => {
     document.getElementById("room")?.scrollIntoView({ behavior: "smooth" });
@@ -146,8 +152,7 @@ export default function App() {
           title="The shop"
           aside={
             <p className="max-w-xs text-sm text-ash">
-              Orders are recorded and DIME follows up by email. No card is taken on this
-              page.
+              Checkout is handled by Stripe. Ships from New York.
             </p>
           }
         >
@@ -173,10 +178,11 @@ export default function App() {
         cart={shop.cart}
         setQty={shop.setQty}
         subtotal={shop.subtotal}
-        placeOrder={shop.placeOrder}
-        placing={shop.placing}
+        checkout={shop.checkout}
+        busy={shop.busy}
         error={shop.error}
-        orderId={shop.orderId}
+        outcome={shop.outcome}
+        onDismissOutcome={shop.dismissOutcome}
       />
     </div>
   );

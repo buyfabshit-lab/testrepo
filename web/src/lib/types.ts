@@ -88,15 +88,6 @@ type Table<Row, Insert = Partial<Row>> = {
   Relationships: [];
 };
 
-export type OrderInsert = {
-  fan_id: string;
-  handle: string | null;
-  email: string;
-  items: CartLine[] | unknown;
-  subtotal_cents: number;
-  note: string | null;
-};
-
 export type Database = {
   public: {
     Tables: {
@@ -127,10 +118,9 @@ export type Database = {
         { poll_id: string; option_id: string; fan_id: string }
       >;
       dime_reactions: Table<Reaction, Pick<Reaction, "fan_id" | "emoji">>;
-      dime_orders: Table<
-        OrderInsert & { id: string; status: string; created_at: string },
-        OrderInsert
-      >;
+      // dime_orders is deliberately absent: since Stripe checkout landed, the
+      // browser neither reads nor writes orders. Only the Edge Functions touch
+      // that table, using the service role.
     };
     Views: {
       dime_poll_results: { Row: PollResult; Relationships: [] };
