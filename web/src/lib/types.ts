@@ -6,6 +6,9 @@ export type Settings = {
   tagline: string | null;
   bio: string | null;
   avatar_url: string | null;
+  location: string | null;
+  /** IANA zone the schedule is authored in, e.g. "America/New_York". */
+  timezone: string | null;
   is_live: boolean;
   stream_title: string | null;
   stream_platform: string | null;

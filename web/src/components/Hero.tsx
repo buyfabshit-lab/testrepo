@@ -67,6 +67,14 @@ export function Hero({
             <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-bone/80">
               {settings.is_live ? "streaming right now" : "offline"}
             </span>
+            {settings.location && (
+              <>
+                <span aria-hidden className="h-3 w-px bg-white/15" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-ash">
+                  {settings.location}
+                </span>
+              </>
+            )}
           </div>
 
           <h1 className="font-display text-[clamp(2.75rem,9vw,5.5rem)] font-extrabold leading-[0.88] tracking-[-0.03em]">

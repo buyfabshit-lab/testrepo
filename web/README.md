@@ -36,6 +36,17 @@ what the RLS policies allow and nothing else — see **Security posture**.
 | Presence ("N here now") | Realtime presence channel — ephemeral, never written to a table |
 | Live/offline banner | `dime_settings.is_live`, pushed over realtime; flipping it in the dashboard changes every open tab |
 
+### Schedule times
+
+Stream times render in the **viewer's** own timezone, with DIME's shown
+underneath whenever it differs — "3:40 PM / 10:40 AM EDT for New York". A fan in
+New York is not told the same time twice; the comparison is by actual UTC offset
+at that instant, not by zone name, so Toronto correctly counts as the same clock.
+
+`Intl` does the conversion, so the EST/EDT switch is handled without any date
+maths of ours, and a typo in `dime_settings.timezone` degrades to "no second
+line" rather than a blank page.
+
 Sends deliberately round-trip through Postgres instead of rendering optimistically,
 so what you see is what everyone else sees, and a rejected write surfaces as an
 error rather than a message that silently never existed. The two exceptions are
@@ -55,7 +66,11 @@ Supabase dashboard (Table Editor):
   converted to a player automatically. `stream_embed_url` overrides it if the
   guess is ever wrong; if neither can be embedded the page shows the portrait
   and a link-out rather than a broken frame.
-- **Schedule**: add rows to `dime_schedule`.
+- **Schedule**: add rows to `dime_schedule`. Author `starts_at` in whatever
+  timezone you like — it is stored as `timestamptz`, so the instant is absolute.
+- **Where DIME is**: `location` ("New York") shows on the hero chip and in the
+  schedule footnote; `timezone` ("America/New_York") is the zone her schedule is
+  announced in. Both are plain rows, so a move means editing one field.
 - **New poll**: insert into `dime_polls`, then its `dime_poll_options`. Set the
   old poll's `is_open` to `false` — RLS then refuses further votes on it.
 - **Merch**: `dime_products`. `is_active = false` hides an item; `stock` drives

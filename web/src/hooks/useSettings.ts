@@ -8,6 +8,8 @@ const FALLBACK: Settings = {
   tagline: "late nights, loud games, louder chat",
   bio: null,
   avatar_url: "/dime.jpg",
+  location: "New York",
+  timezone: "America/New_York",
   is_live: false,
   stream_title: null,
   stream_platform: null,

@@ -78,3 +78,58 @@ export function embedUrl(raw: string | null, explicit: string | null): string | 
   }
   return null;
 }
+
+/**
+ * The viewer's IANA timezone, or "" if the browser won't say.
+ */
+export function viewerZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * A time rendered in a specific zone, with its short name attached
+ * ("8:00 PM EDT"). DST is handled by Intl, so this stays correct across the
+ * March/November switches without any date maths of our own.
+ *
+ * Returns null for an unusable zone rather than throwing, so a typo in
+ * dime_settings.timezone degrades to "no second line" instead of a blank page.
+ */
+export function timeInZone(iso: string, timeZone: string): string | null {
+  if (!timeZone) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone,
+      timeZoneName: "short",
+    }).format(new Date(iso));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when the viewer is somewhere that shares DIME's wall clock. Compared by
+ * actual offset rather than by zone name, so America/New_York and
+ * America/Toronto correctly count as the same and we don't nag a Toronto fan
+ * with a redundant second line.
+ */
+export function sharesClockWith(iso: string, timeZone: string): boolean {
+  if (!timeZone) return true;
+  try {
+    const at = new Date(iso);
+    const here = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: false,
+    }).format(at);
+    const there = new Intl.DateTimeFormat("en-US", {
+      hour: "numeric", minute: "2-digit", hour12: false, timeZone,
+    }).format(at);
+    return here === there;
+  } catch {
+    return true;
+  }
+}

@@ -133,7 +133,11 @@ export default function App() {
         </Section>
 
         <Section id="schedule" eyebrow="when" title="What's coming">
-          <SchedulePanel items={schedule} />
+          <SchedulePanel
+            items={schedule}
+            timezone={settings.timezone}
+            location={settings.location}
+          />
         </Section>
 
         <Section
