@@ -1,0 +1,12 @@
+# Deploy config for the DIME site. The site lives in web/, so deploys run from
+# this directory; Netlify builds with Vite and serves dist/.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Single-page app: every path renders index.html (Stripe returns to /?checkout=…,
+# which is the root, but this keeps any future deep link from 404ing).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

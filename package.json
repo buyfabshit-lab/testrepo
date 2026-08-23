@@ -1,0 +1,11 @@
+{
+  "name": "dime-live-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "DIME's live site lives in web/. This root manifest exists so hosts that deploy the repo root (Railway among them) build and serve it with zero configuration.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "cd web && npm ci --include=dev && npm run build",
+    "start": "cd web && npm start"
+  }
+}
