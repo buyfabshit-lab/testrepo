@@ -48,7 +48,7 @@ export function loadFan(): Fan {
         return {
           id: parsed.id,
           handle: parsed.handle.slice(0, 24),
-          hue: typeof parsed.hue === "number" ? parsed.hue : 322,
+          hue: typeof parsed.hue === "number" ? parsed.hue : 352,
         };
       }
     }

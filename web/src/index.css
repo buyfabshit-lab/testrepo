@@ -1,18 +1,57 @@
 @import "tailwindcss";
 
+/* Latin subsets only, bundled from @fontsource so no host or CDN is ever a
+   dependency. Vite inlines these as data URIs (assetsInlineLimit), which is
+   what lets the single-file build carry its own typography. */
+@font-face {
+  font-family: "Big Shoulders Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/big-shoulders-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./assets/fonts/archivo-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/space-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/space-mono-latin-700-normal.woff2") format("woff2");
+}
+
 @theme {
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Type: tall condensed poster face for display, a working grotesque for
+     body, and a mono with some character for the eyebrow labels. All three
+     are bundled (@fontsource, imported in main.tsx) so they render on any
+     host with no external font request. */
+  --font-display: "Big Shoulders Variable", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-sans: "Archivo Variable", "Helvetica Neue", ui-sans-serif, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
 
-  --color-void: #07060a;
-  --color-ink: #0d0b12;
-  --color-shell: #14111c;
-  --color-bone: #f7f3ef;
-  --color-ash: #a49daf;
+  /* Palette keyed to the artwork: inked black with a red bias, blood-red
+     accent (her lips and the streaks in the hair), gold kept for the hoops. */
+  --color-void: #0a0507;
+  --color-ink: #140b0e;
+  --color-shell: #1c1013;
+  --color-bone: #f5f1ec;
+  --color-ash: #a89b9d;
 
-  --color-hot-400: #ff5fbe;
-  --color-hot-500: #f81f9c;
-  --color-hot-600: #d1067e;
+  --color-hot-400: #ff4d5e;
+  --color-hot-500: #e11227;
+  --color-hot-600: #a90d1d;
   --color-gold-400: #ffc857;
   --color-gold-500: #f0a92b;
 }
@@ -20,7 +59,7 @@
 @layer base {
   :root {
     color-scheme: dark;
-    --hot: 322;
+    --hot: 352;
   }
 
   html {
@@ -87,6 +126,12 @@
 
 @utility text-balance-pretty {
   text-wrap: pretty;
+}
+
+@utility display-caps {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
 }
 
 /* Grain overlay — one repeated SVG turbulence tile, no network cost. */
