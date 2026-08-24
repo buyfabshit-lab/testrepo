@@ -2,28 +2,55 @@
 
 Everything you know, as bubbles you can drift through.
 
-You drop things in — a thought, a link, a name, something to do — and each one
-becomes a bubble on an endless canvas. Bubbles about the same thing drift
+It builds itself from your repositories, and you drop anything else in by hand
+— a thought, a link, a name, something to do. Each one becomes a bubble on an
+endless canvas. Bubbles about the same thing drift
 together, get a topic name, and draw lines between themselves. Click one and the
 rest of the canvas recedes so you can see only what it touches. Ask a question
 and the bubbles it was answered from light up.
 
 No folders. No "where should this go?" before you're allowed to save.
 
+## Built from your repos
+
+`npm run ingest` clones every repository in `repos.json` and turns it into
+bubbles: the repo itself, each section of each markdown file, each meaningful
+directory, each migration and edge function, every TODO, and the commits whose
+messages actually say something. Every bubble keeps the GitHub URL it came
+from, so opening one and clicking through lands on the real file or commit.
+
+Each repo is its own constellation on the canvas. Flip **Cluster by topic** in
+settings and the same bubbles regroup around what they are *about* instead —
+deploy notes from three repos land together, and so do the Supabase ones.
+
+```bash
+npm run ingest              # every repo in repos.json
+npm run ingest -- owner/x   # just one
+```
+
+Public repos need no token; for private ones, be logged in to git first. The
+output is `public/repo-brain.json`, which the app loads on first run. Re-running
+is safe: bubble ids are derived from the repo and the thing they came from, so
+a second run updates bubbles instead of duplicating them, and anything you
+typed yourself is left alone.
+
 ## The idea
 
 Most note apps make you file a thought before you understand it. This one lets
 it float until it finds its own neighbours: structure is a *consequence* of what
-you capture, not a prerequisite for capturing it.
+you capture, not a prerequisite for capturing it. Which is also why it can eat a
+pile of repositories and come out organised.
 
 That means the canvas has to organise itself, which happens in two layers:
 
 **The local layer** does the work and needs no API key. Notes are turned into
 tf-idf vectors, scored pairwise for similarity (with a bonus for shared tags),
-thinned to each bubble's strongest handful of links, and grouped by *primary
-tag* — whichever of a note's tags the rest of your brain leans on most. A small
-force simulation then lays the whole thing out: bubbles repel, links pull,
-clusters have gravity. Search runs against the same vectors.
+thinned to each bubble's strongest handful of links, and grouped either by the
+repo they came from or by *primary tag* — whichever of a note's tags the rest of
+your brain leans on most. A small force simulation then lays the whole thing
+out: bubbles repel, links pull, clusters have gravity. Search runs against the
+same vectors. Colour is per cluster, so you can tell one constellation from the
+next across the canvas.
 
 **The Claude layer** is optional and additive. With an API key, every captured
 thought gets a title, a kind and reusable tags from `claude-opus-5`, and the ask
@@ -49,6 +76,7 @@ on first run; wipe it from Settings once your own notes take over.
 | `npm run build` | typecheck + production build into `dist/` |
 | `npm run preview` | serve the built bundle |
 | `npm run typecheck` | types only |
+| `npm run ingest` | rebuild the brain from the repos in `repos.json` |
 
 ## Getting around
 
@@ -60,7 +88,9 @@ on first run; wipe it from Settings once your own notes take over.
 
 ## Your data
 
-Everything lives in this browser's `localStorage` and is never uploaded. Export
+Everything lives in this browser's `localStorage` and is never uploaded. The
+repo brain is built locally by the ingest script and served as a static file;
+nothing in the app talks to GitHub. Export
 to JSON from Settings before you clear a browser or move machines; import merges
 by id rather than overwriting.
 
@@ -80,7 +110,7 @@ src/
     graph.ts    pairwise linking, primary-tag clustering, local search
     store.ts    localStorage persistence, import/export
     claude.ts   the two Claude calls: enrich (structured) and ask (streaming)
-    seed.ts     the demo brain
+    seed.ts     the demo brain, used only when no repo brain exists
   hooks/
     useBrain.ts   thoughts, settings, the enrichment queue
     useLayout.ts  the force simulation
@@ -89,7 +119,10 @@ src/
     CaptureBar.tsx    the one box
     AskPanel.tsx      retrieval, streaming answers, citations
     DetailPanel.tsx   one bubble, editable, and what it drifts near
-    SettingsSheet.tsx key, data, shortcuts
+    SettingsSheet.tsx key, arrangement, data, shortcuts
+scripts/
+  ingest-repos.mjs  clone your repos and turn them into bubbles
+repos.json          which repos that script reads
 ```
 
 ## Deploying

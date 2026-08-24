@@ -1,17 +1,19 @@
-import type { Brain, Thought } from "./types";
+import type { Brain, ClusterMode, Thought } from "./types";
 import { guessKind, guessTitle } from "./text";
 
 const KEY = "second-brain.v1";
 const SETTINGS_KEY = "second-brain.settings.v1";
 
 export type Settings = {
+  /** Group bubbles by the repo they came from, or by what they are about. */
+  clusterMode: ClusterMode;
   /** Your own Anthropic key. Stays in this browser; never sent anywhere but the API. */
   apiKey: string;
   /** Auto-title and auto-tag each new thought with Claude as it lands. */
   autoEnrich: boolean;
 };
 
-export const DEFAULT_SETTINGS: Settings = { apiKey: "", autoEnrich: true };
+export const DEFAULT_SETTINGS: Settings = { apiKey: "", autoEnrich: true, clusterMode: "repo" };
 
 function newId(): string {
   return crypto.randomUUID();
@@ -72,7 +74,26 @@ function normalise(raw: Partial<Thought>): Thought {
     createdAt: raw.createdAt ?? now,
     updatedAt: raw.updatedAt ?? raw.createdAt ?? now,
     enriched: raw.enriched ?? false,
+    ...(raw.repo ? { repo: raw.repo } : {}),
   };
+}
+
+/**
+ * The brain built from your repositories by `npm run ingest`, served as a
+ * static file. Absent until that script has been run, which is why a missing
+ * file is a normal outcome here and not an error.
+ */
+export async function loadRepoBrain(): Promise<Thought[] | null> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}repo-brain.json`, {
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const thoughts = importBrain(await response.text());
+    return thoughts.length ? thoughts : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Build a thought from raw captured text using local heuristics only. */

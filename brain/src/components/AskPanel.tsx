@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import type { Thought } from "../lib/types";
-import { KIND_HUE } from "../lib/types";
 import type { Graph } from "../lib/graph";
 import { search } from "../lib/graph";
 import { snippet } from "../lib/text";
@@ -123,7 +122,7 @@ export default function AskPanel({ thoughts, graph, apiKey, onHighlight, onGoTo 
                       <span className="flex items-center gap-2">
                         <span
                           className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: `hsl(${KIND_HUE[hit.kind]} 70% 60%)` }}
+                          style={{ background: `hsl(${graph.hueOf.get(hit.id) ?? 210} 70% 60%)` }}
                           aria-hidden
                         />
                         <span className="min-w-0 flex-1 truncate text-sm">{hit.title}</span>

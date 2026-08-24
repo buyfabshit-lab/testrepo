@@ -56,10 +56,17 @@ export default function App() {
       setCamera({ x: 0, y: 0, scale: 0.85 });
       return;
     }
-    const left = Math.min(...bodies.map((body) => body.x - body.r));
-    const right = Math.max(...bodies.map((body) => body.x + body.r));
-    const top = Math.min(...bodies.map((body) => body.y - body.r));
-    const bottom = Math.max(...bodies.map((body) => body.y + body.r));
+    // One non-finite coordinate would otherwise turn the whole camera into NaN,
+    // and an SVG group transformed by NaN paints nothing at all.
+    const finite = bodies.filter((body) => Number.isFinite(body.x) && Number.isFinite(body.y));
+    if (finite.length === 0) {
+      setCamera({ x: 0, y: 0, scale: 0.85 });
+      return;
+    }
+    const left = Math.min(...finite.map((body) => body.x - body.r));
+    const right = Math.max(...finite.map((body) => body.x + body.r));
+    const top = Math.min(...finite.map((body) => body.y - body.r));
+    const bottom = Math.max(...finite.map((body) => body.y + body.r));
     // Leave room for the panels that float over the canvas edges.
     const width = Math.max(1, window.innerWidth - 420);
     const height = Math.max(1, window.innerHeight - 220);
@@ -153,7 +160,7 @@ export default function App() {
         arrivedIds={arrivedIds}
       />
 
-      {brain.thoughts.length === 0 && (
+      {brain.thoughts.length === 0 && !brain.booting && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="max-w-xs text-center text-sm leading-relaxed text-mist">
             Empty in here. Drop a thought in below and it becomes a bubble; drop in a few more and
@@ -170,7 +177,7 @@ export default function App() {
             <p className="text-xs text-mist">
               {brain.thoughts.length} bubble{brain.thoughts.length === 1 ? "" : "s"} ·{" "}
               {brain.graph.clusters.filter((cluster) => cluster.memberIds.length > 1).length}{" "}
-              clusters
+              {brain.settings.clusterMode === "repo" ? "repos" : "topics"}
               {!hasKey && " · local only"}
             </p>
           </div>
@@ -249,6 +256,7 @@ export default function App() {
           onImport={brain.merge}
           onWipe={brain.wipe}
           onReseed={brain.reseed}
+          onRefreshRepos={() => void brain.refreshFromRepos()}
           onClose={() => setSettingsOpen(false)}
         />
       )}

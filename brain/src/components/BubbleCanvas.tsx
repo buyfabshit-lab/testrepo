@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import type { Thought } from "../lib/types";
-import { KIND_HUE } from "../lib/types";
 import type { Graph } from "../lib/graph";
 import type { Layout } from "../hooks/useLayout";
 
@@ -218,7 +217,7 @@ export default function BubbleCanvas({
         {thoughts.map((thought) => {
           const body = layout.bodies.get(thought.id);
           if (!body) return null;
-          const hue = KIND_HUE[thought.kind];
+          const hue = graph.hueOf.get(thought.id) ?? 210;
           const isSelected = thought.id === selectedId;
           const isLit = highlighted.has(thought.id);
           const opacity = opacityFor(thought.id);

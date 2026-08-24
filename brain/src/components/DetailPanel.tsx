@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Thought } from "../lib/types";
-import { KINDS, KIND_HUE } from "../lib/types";
+import { KINDS } from "../lib/types";
 import type { Graph } from "../lib/graph";
 
 type Props = {
@@ -48,7 +48,7 @@ export default function DetailPanel({
     .filter((item): item is { thought: Thought; weight: number } => Boolean(item.thought))
     .slice(0, 8);
 
-  const hue = KIND_HUE[thought.kind];
+  const hue = graph.hueOf.get(thought.id) ?? 210;
   const addTag = (raw: string) => {
     const tag = raw.trim().toLowerCase().replace(/^#/, "").replace(/\s+/g, "-");
     if (!tag || thought.tags.includes(tag)) return;
@@ -192,7 +192,7 @@ export default function DetailPanel({
                   >
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: `hsl(${KIND_HUE[other.kind]} 70% 60%)` }}
+                      style={{ background: `hsl(${graph.hueOf.get(other.id) ?? 210} 70% 60%)` }}
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1 truncate">{other.title}</span>

@@ -5,6 +5,7 @@ import {
   hashtags,
   importBrain,
   loadBrain,
+  loadRepoBrain,
   loadSettings,
   makeThought,
   saveBrain,
@@ -16,21 +17,44 @@ import { describeError, enrich } from "../lib/claude";
 import { SEED } from "../lib/seed";
 
 export function useBrain() {
-  const [thoughts, setThoughts] = useState<Thought[]>(() => loadBrain()?.thoughts ?? SEED());
+  // A brain that has been saved before wins outright — including an empty one,
+  // so wiping the canvas stays wiped instead of refilling on the next reload.
+  const saved = useRef(loadBrain()).current;
+  const [thoughts, setThoughts] = useState<Thought[]>(saved?.thoughts ?? []);
+  const [booting, setBooting] = useState(saved === null);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
   const [pending, setPending] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   /** Ids already handed to Claude, so a re-render never re-labels a thought. */
   const seen = useRef(new Set<string>());
 
+  // First run only: prefer the brain built from your repos by `npm run ingest`,
+  // and fall back to the demo brain when that file has not been generated.
   useEffect(() => {
+    if (!booting) return;
+    let cancelled = false;
+    void loadRepoBrain().then((fromRepos) => {
+      if (cancelled) return;
+      setThoughts(fromRepos ?? SEED());
+      setBooting(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [booting]);
+
+  useEffect(() => {
+    if (booting) return;
     const brain: Brain = { version: 1, thoughts };
     saveBrain(brain);
-  }, [thoughts]);
+  }, [thoughts, booting]);
 
   useEffect(() => saveSettings(settings), [settings]);
 
-  const graph = useMemo(() => buildGraph(thoughts), [thoughts]);
+  const graph = useMemo(
+    () => buildGraph(thoughts, settings.clusterMode),
+    [thoughts, settings.clusterMode],
+  );
 
   const vocabulary = useMemo(() => {
     const counts = new Map<string, number>();
@@ -126,6 +150,22 @@ export function useBrain() {
     seen.current.clear();
   }, []);
 
+  /** Pull in the latest output of `npm run ingest`, merging over what is here. */
+  const refreshFromRepos = useCallback(async () => {
+    const fromRepos = await loadRepoBrain();
+    if (!fromRepos) {
+      setNotice("No repo brain found — run `npm run ingest` first.");
+      return;
+    }
+    setThoughts((current) => {
+      const byId = new Map(current.map((thought) => [thought.id, thought]));
+      // Ingested ids are deterministic, so this updates rather than duplicates.
+      for (const thought of fromRepos) byId.set(thought.id, thought);
+      return [...byId.values()].sort((a, b) => a.createdAt - b.createdAt);
+    });
+    setNotice(`Loaded ${fromRepos.length} bubbles from your repos.`);
+  }, []);
+
   return {
     thoughts,
     graph,
@@ -143,6 +183,8 @@ export function useBrain() {
     merge,
     wipe,
     reseed,
+    refreshFromRepos,
+    booting,
   };
 }
 

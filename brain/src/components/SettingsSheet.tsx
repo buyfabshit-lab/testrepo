@@ -10,6 +10,7 @@ type Props = {
   onImport: (json: string) => void;
   onWipe: () => void;
   onReseed: () => void;
+  onRefreshRepos: () => void;
   onClose: () => void;
 };
 
@@ -20,9 +21,11 @@ export default function SettingsSheet({
   onImport,
   onWipe,
   onReseed,
+  onRefreshRepos,
   onClose,
 }: Props) {
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const repoCount = new Set(thoughts.map((thought) => thought.repo).filter(Boolean)).size;
   const fileInput = useRef<HTMLInputElement>(null);
 
   const download = () => {
@@ -105,11 +108,39 @@ export default function SettingsSheet({
 
         <section className="mb-6">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-mist">
+            Arrangement
+          </h3>
+          <div className="mb-2 flex gap-2">
+            {(["repo", "topic"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onSettings({ clusterMode: mode })}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm transition ${
+                  settings.clusterMode === mode
+                    ? "border-chalk text-chalk"
+                    : "border-edge text-mist hover:border-mist"
+                }`}
+              >
+                {mode === "repo" ? "Cluster by repo" : "Cluster by topic"}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-mist">
+            By repo, each repository is its own constellation. By topic, bubbles regroup around
+            what they are about — so deploy notes from three repos land together.
+          </p>
+        </section>
+
+        <section className="mb-6">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-mist">
             Your data
           </h3>
           <p className="mb-3 text-xs text-mist">
-            {thoughts.length} thought{thoughts.length === 1 ? "" : "s"}, held in this browser's
-            local storage. Nothing is uploaded anywhere. Export before you clear a browser.
+            {thoughts.length} thought{thoughts.length === 1 ? "" : "s"}
+            {repoCount > 0 && ` from ${repoCount} repo${repoCount === 1 ? "" : "s"}`}, held in this
+            browser's local storage. Nothing is uploaded anywhere. Export before you clear a
+            browser. "Reload from repos" picks up the latest{" "}
+            <code className="font-mono text-chalk">npm run ingest</code>.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -134,6 +165,12 @@ export default function SettingsSheet({
                 event.target.value = "";
               }}
             />
+            <button
+              onClick={onRefreshRepos}
+              className="rounded-xl border border-edge px-3 py-1.5 text-sm transition hover:border-mist"
+            >
+              Reload from repos
+            </button>
             <button
               onClick={onReseed}
               className="rounded-xl border border-edge px-3 py-1.5 text-sm transition hover:border-mist"

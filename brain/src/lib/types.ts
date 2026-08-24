@@ -18,21 +18,16 @@ export type Thought = {
   updatedAt: number;
   /** True once Claude has titled/tagged it. False means local heuristics did. */
   enriched: boolean;
+  /** "owner/name" when this bubble was ingested from a repo; absent if typed. */
+  repo?: string;
 };
+
+/** Whether the canvas groups by which repo a bubble came from, or by topic. */
+export type ClusterMode = "repo" | "topic";
 
 export type Kind = "note" | "idea" | "task" | "person" | "link" | "fact";
 
 export const KINDS: Kind[] = ["note", "idea", "task", "person", "link", "fact"];
-
-/** Hue per kind, so a glance at the canvas reads as a mix of stuff, not soup. */
-export const KIND_HUE: Record<Kind, number> = {
-  note: 210,
-  idea: 45,
-  task: 350,
-  person: 285,
-  link: 190,
-  fact: 150,
-};
 
 /** A group of related thoughts, recomputed from scratch whenever data changes. */
 export type Cluster = {

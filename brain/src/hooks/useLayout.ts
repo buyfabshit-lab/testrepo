@@ -10,8 +10,14 @@ import type { Graph } from "../lib/graph";
  */
 
 const REPULSION = 5200;
+/** Beyond this, two bubbles simply do not push each other. Without a cutoff the
+ *  force is O(n²) in both cost and magnitude, and a few hundred bubbles sum to
+ *  velocities that overflow to Infinity and poison every position with NaN. */
+const REPULSION_RANGE = 420;
+/** Hard ceiling on per-axis speed. The last line of defence against blow-up. */
+const MAX_SPEED = 40;
 const SPRING = 0.02;
-const CLUSTER_PULL = 0.012;
+const CLUSTER_PULL = 0.022;
 const CENTER_PULL = 0.0015;
 const DAMPING = 0.86;
 const ALPHA_DECAY = 0.985;
@@ -21,6 +27,12 @@ const SLEEP = 0.008;
 export function radiusFor(thought: Thought): number {
   const weight = Math.log2(thought.text.length + 8);
   return Math.max(26, Math.min(74, 14 + weight * 6 + (thought.pinned ? 8 : 0)));
+}
+
+/** Keep a velocity finite and sane, whatever the force sum did. */
+function clamp(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(-MAX_SPEED, Math.min(MAX_SPEED, value));
 }
 
 /** Cluster wells laid out on a phyllotaxis spiral: even spacing, no overlap. */
@@ -39,6 +51,11 @@ export type Layout = {
   grab: (id: string, x: number, y: number) => void;
   drop: () => void;
 };
+
+/** A cluster of 60 needs far more elbow room than a cluster of 3. */
+function biggestCluster(graph: Graph): number {
+  return graph.clusters.reduce((most, cluster) => Math.max(most, cluster.memberIds.length), 0);
+}
 
 export function useLayout(thoughts: Thought[], graph: Graph): Layout {
   const bodies = useRef(new Map<string, Body>()).current;
@@ -74,7 +91,7 @@ export function useLayout(thoughts: Thought[], graph: Graph): Layout {
   // Sync bodies to the current thoughts: add newcomers near their cluster,
   // drop bodies whose thought is gone, and keep everyone else where they are.
   useEffect(() => {
-    const spread = 260 + Math.sqrt(thoughts.length) * 38;
+    const spread = 260 + Math.sqrt(thoughts.length) * 38 + biggestCluster(graph) * 3;
     wells.clear();
     graph.clusters.forEach((cluster, index) => wells.set(cluster.id, wellFor(index, spread)));
 
@@ -89,12 +106,16 @@ export function useLayout(thoughts: Thought[], graph: Graph): Layout {
         continue;
       }
       const well = wells.get(cluster) ?? { x: 0, y: 0 };
-      // Land just off the well so the first frame has something to solve.
+      // Scatter newcomers across a disc sized to the cluster. Landing them all
+      // on one small ring stacks dozens of bubbles almost exactly on top of
+      // each other, and the repulsion needed to separate that is explosive.
+      const crowd = graph.clusters[cluster]?.memberIds.length ?? 1;
       const angle = Math.random() * Math.PI * 2;
+      const distance = 40 + Math.sqrt(Math.random()) * Math.sqrt(crowd) * 34;
       bodies.set(thought.id, {
         id: thought.id,
-        x: well.x + Math.cos(angle) * 40,
-        y: well.y + Math.sin(angle) * 40,
+        x: well.x + Math.cos(angle) * distance,
+        y: well.y + Math.sin(angle) * distance,
         vx: 0,
         vy: 0,
         r: radiusFor(thought),
@@ -119,6 +140,7 @@ export function useLayout(thoughts: Thought[], graph: Graph): Layout {
           let dx = b.x - a.x;
           let dy = b.y - a.y;
           let distance = Math.hypot(dx, dy);
+          if (distance > REPULSION_RANGE) continue;
           if (distance < 0.01) {
             // Perfectly stacked bodies have no direction to separate along.
             dx = Math.random() - 0.5;
@@ -172,8 +194,8 @@ export function useLayout(thoughts: Thought[], graph: Graph): Layout {
           body.vy = 0;
           continue;
         }
-        body.vx *= DAMPING;
-        body.vy *= DAMPING;
+        body.vx = clamp(body.vx * DAMPING);
+        body.vy = clamp(body.vy * DAMPING);
         body.x += body.vx * alpha.current;
         body.y += body.vy * alpha.current;
       }
