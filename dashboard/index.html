@@ -1,0 +1,1559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day Book</title>
+<meta name="description" content="A personal day book: capture in one line, see what to do next, plan the hours you actually have.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* ---- tokens: light is the base set, dark redefines the same names ---- */
+  :root {
+    color-scheme: light;
+    --bg: #f1f2f5;
+    --surface: #fbfbfd;
+    --surface-2: #e8ebf1;
+    --rule: #d6dae3;
+    --rule-soft: #e3e6ed;
+    --ink: #171b24;
+    --ink-soft: #596173;
+    --ink-faint: #8b93a5;
+    --accent: #2f4f7a;
+    --accent-ink: #ffffff;
+    --accent-wash: #dfe8f5;
+    --crit: #b03a2b;
+    --crit-wash: #f6e3df;
+    --warn: #96690a;
+    --warn-wash: #f6ecd6;
+    --good: #3f6b34;
+    --good-wash: #e2ecdd;
+    --shadow: 0 1px 2px rgba(23, 27, 36, .06), 0 8px 24px -18px rgba(23, 27, 36, .5);
+
+    --step--1: .78rem;
+    --step-0: .95rem;
+    --step-1: 1.1rem;
+    --step-2: 1.4rem;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0f1319;
+      --surface: #161b23;
+      --surface-2: #1d232d;
+      --rule: #2b323e;
+      --rule-soft: #232935;
+      --ink: #e7eaf0;
+      --ink-soft: #9aa4b6;
+      --ink-faint: #6d7688;
+      --accent: #7ea9e0;
+      --accent-ink: #0f1319;
+      --accent-wash: #1c2a3b;
+      --crit: #e0705c;
+      --crit-wash: #33201d;
+      --warn: #dfa73c;
+      --warn-wash: #322715;
+      --good: #7fb069;
+      --good-wash: #1f2a1c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -20px rgba(0, 0, 0, .9);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1319;
+    --surface: #161b23;
+    --surface-2: #1d232d;
+    --rule: #2b323e;
+    --rule-soft: #232935;
+    --ink: #e7eaf0;
+    --ink-soft: #9aa4b6;
+    --ink-faint: #6d7688;
+    --accent: #7ea9e0;
+    --accent-ink: #0f1319;
+    --accent-wash: #1c2a3b;
+    --crit: #e0705c;
+    --crit-wash: #33201d;
+    --warn: #dfa73c;
+    --warn-wash: #322715;
+    --good: #7fb069;
+    --good-wash: #1f2a1c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -20px rgba(0, 0, 0, .9);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input, textarea, select { font: inherit; color: inherit; }
+
+  :where(a, button, input, textarea, [contenteditable]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  /* ---- masthead ---- */
+  .masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    align-items: end;
+    padding-bottom: 18px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  @media (min-width: 720px) {
+    .masthead { grid-template-columns: minmax(0, 1fr) auto; gap: 20px 32px; }
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .bigdate {
+    margin: 2px 0 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 6vw, 3.3rem);
+    line-height: 1;
+    letter-spacing: -.02em;
+    text-wrap: balance;
+  }
+
+  .focus-line {
+    margin: 14px 0 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px dashed var(--rule);
+    padding-bottom: 6px;
+    max-width: 46ch;
+  }
+
+  .focus-line .lbl {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    flex: none;
+  }
+
+  #focus {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 2px 0;
+    font-family: var(--display);
+    font-size: var(--step-1);
+  }
+
+  #focus::placeholder { color: var(--ink-faint); font-family: var(--sans); font-size: var(--step-0); }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+
+  .stat { min-width: 62px; }
+
+  .stat b {
+    display: block;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: var(--step-2);
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat span {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .stat.is-crit b { color: var(--crit); }
+  .stat.is-warn b { color: var(--warn); }
+
+  /* ---- capture ---- */
+  .capture {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .capture-row { display: flex; gap: 10px; align-items: center; }
+
+  #capture {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 4px 0;
+    font-size: var(--step-1);
+  }
+
+  #capture::placeholder { color: var(--ink-faint); font-size: var(--step-0); }
+
+  .btn {
+    border: 1px solid var(--rule);
+    background: var(--surface-2);
+    color: var(--ink);
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: .04em;
+    cursor: pointer;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .btn-primary:hover { color: var(--accent-ink); filter: brightness(1.08); }
+
+  .parse { display: flex; flex-wrap: wrap; gap: 6px; min-height: 22px; }
+
+  .hint {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--ink-faint);
+    letter-spacing: .02em;
+  }
+
+  .hint kbd {
+    font: inherit;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    border-radius: 2px;
+    padding: 0 4px;
+  }
+
+  /* ---- chips ---- */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .04em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .chip.proj { background: var(--accent-wash); color: var(--accent); }
+  .chip.crit { background: var(--crit-wash); color: var(--crit); }
+  .chip.warn { background: var(--warn-wash); color: var(--warn); }
+  .chip.good { background: var(--good-wash); color: var(--good); }
+
+  /* ---- layout ---- */
+  /* One stack on narrow screens: the columns dissolve so every card is a grid
+     item and `order` alone decides the reading sequence. The same order values
+     hold inside each column once the two-column layout takes over. */
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
+  .col { display: contents; }
+
+  @media (min-width: 960px) {
+    .grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 26px; }
+    .col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  }
+
+  #card-next { order: 1; }
+  #card-list { order: 2; }
+  #card-plan { order: 3; }
+  #card-week { order: 4; }
+  #card-projects { order: 5; }
+  #card-dump { order: 6; }
+  #card-done { order: 7; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .card > header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    background: linear-gradient(var(--surface-2), var(--surface-2)) padding-box;
+  }
+
+  .card h2 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .card .meta {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card .body { padding: 4px 0; }
+  .card .body.pad { padding: 14px 16px; }
+
+  .empty {
+    margin: 0;
+    padding: 16px;
+    color: var(--ink-faint);
+    font-size: var(--step--1);
+  }
+
+  /* ---- task rows ---- */
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px 6px;
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* counts and durations keep their own casing — "3h05" not "3H05" */
+  .group-head span + span { text-transform: none; letter-spacing: .04em; }
+
+  .group-head.od { color: var(--crit); }
+  .group-head.td { color: var(--warn); }
+
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+    padding: 9px 16px;
+    border-top: 1px solid var(--rule-soft);
+  }
+
+  .row:hover { background: var(--surface-2); }
+
+  .tick {
+    margin-top: 2px;
+    width: 17px;
+    height: 17px;
+    flex: none;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .tick:hover { border-color: var(--good); background: var(--good-wash); }
+  .row.pri1 .tick { border-color: var(--crit); }
+
+  .row-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+
+  .title {
+    line-height: 1.35;
+    word-break: break-word;
+    cursor: text;
+  }
+
+  .row.pri1 .title { font-weight: 600; }
+
+  .row-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .row-acts { display: flex; gap: 4px; opacity: 0; transition: opacity .12s ease; }
+  .row:hover .row-acts, .row:focus-within .row-acts { opacity: 1; }
+
+  .mini {
+    border: 0;
+    background: transparent;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: .7rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 2px;
+  }
+
+  .mini:hover { color: var(--accent); background: var(--accent-wash); }
+  .mini.danger:hover { color: var(--crit); background: var(--crit-wash); }
+
+  /* ---- next up ---- */
+  .next { display: flex; flex-direction: column; }
+
+  .next-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--rule-soft);
+    align-items: start;
+  }
+
+  .next-item:first-child { border-top: 0; }
+
+  .rank {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: var(--step-2);
+    line-height: 1;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    min-width: 1.1em;
+  }
+
+  .next-item .title { font-size: var(--step-1); }
+
+  .why { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+  /* ---- planner ---- */
+  .plan-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .plan-controls input[type="number"] {
+    width: 62px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    border-radius: 3px;
+    padding: 5px 7px;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+
+  .slot time {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slot .t { line-height: 1.35; word-break: break-word; }
+
+  /* ---- week ---- */
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 14px 16px; }
+
+  .day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px 2px;
+    border-radius: 3px;
+  }
+
+  .day:hover { background: var(--surface-2); }
+
+  .day .dw {
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .day .dn {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: var(--step-1);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .day.today .dn { color: var(--accent); }
+  .day.today .dw { color: var(--accent); }
+
+  .load { width: 100%; height: 38px; display: flex; align-items: flex-end; }
+
+  .load i {
+    display: block;
+    width: 100%;
+    background: var(--accent-wash);
+    border-top: 2px solid var(--accent);
+    min-height: 2px;
+    border-radius: 1px 1px 0 0;
+  }
+
+  .day.over i { background: var(--crit-wash); border-top-color: var(--crit); }
+
+  .day .mins {
+    font-family: var(--mono);
+    font-size: .62rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- projects ---- */
+  .projects { display: flex; flex-direction: column; }
+
+  .proj-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 16px;
+    border-top: 1px solid var(--rule-soft);
+    cursor: pointer;
+    background: transparent;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    text-align: left;
+    width: 100%;
+    font: inherit;
+  }
+
+  .proj-row:first-child { border-top: 0; }
+  .proj-row:hover { background: var(--surface-2); }
+  .proj-row[aria-pressed="true"] { background: var(--accent-wash); }
+
+  .proj-name { font-family: var(--mono); font-size: var(--step--1); color: var(--accent); }
+
+  .bar { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .bar i { display: block; height: 100%; background: var(--good); }
+
+  .proj-count { font-family: var(--mono); font-size: .7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+  /* ---- dump + done ---- */
+  #dump {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    border-radius: 3px;
+    padding: 10px;
+    line-height: 1.55;
+  }
+
+  .dump-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+
+  .done-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--rule-soft);
+  }
+
+  .done-row .t { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--ink-faint); min-width: 0; word-break: break-word; }
+
+  /* ---- footer ---- */
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--ink-faint);
+  }
+
+  .foot-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .save-state { display: inline-flex; align-items: center; gap: 6px; }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); flex: none; }
+  .save-state[data-s="synced"] .dot { background: var(--good); }
+  .save-state[data-s="saving"] .dot { background: var(--warn); }
+  .save-state[data-s="pending"] .dot { background: var(--warn); }
+  .save-state[data-s="error"] .dot, .save-state[data-s="conflict"] .dot { background: var(--crit); }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    padding: 8px 14px;
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+    z-index: 20;
+    max-width: min(90vw, 480px);
+  }
+
+  .toast.on { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="eyebrow" id="weekday">&nbsp;</p>
+      <h1 class="bigdate" id="bigdate">&nbsp;</h1>
+      <p class="focus-line">
+        <span class="lbl">Focus</span>
+        <input id="focus" autocomplete="off" placeholder="One thing today has to produce">
+      </p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="capture" aria-label="Add a task">
+    <div class="capture-row">
+      <input id="capture" autocomplete="off" spellcheck="false"
+             placeholder="Master the Midnight Fusion single #label !! @fri ~90m">
+      <button class="btn btn-primary" id="add" type="button">Add</button>
+    </div>
+    <div class="parse" id="parse"></div>
+    <p class="hint">
+      <kbd>#project</kbd> · <kbd>!</kbd> high <kbd>!!</kbd> critical ·
+      <kbd>@today</kbd> <kbd>@fri</kbd> <kbd>@+3d</kbd> <kbd>@9/14</kbd> <kbd>@2026-09-14</kbd> ·
+      <kbd>~45m</kbd> <kbd>~2h</kbd> · press <kbd>/</kbd> to jump here
+    </p>
+  </section>
+
+  <div class="grid">
+    <div class="col">
+      <section class="card" id="card-list">
+        <header>
+          <h2>The list</h2>
+          <span class="meta" id="list-meta"></span>
+        </header>
+        <div class="body" id="lists"></div>
+      </section>
+
+      <section class="card" id="card-dump">
+        <header>
+          <h2>Brain dump</h2>
+          <span class="meta">one line, one task</span>
+        </header>
+        <div class="body pad">
+          <textarea id="dump" spellcheck="true" placeholder="Empty your head here. Each line can become a task — the same #project !priority @date ~estimate shorthand works."></textarea>
+          <div class="dump-acts">
+            <button class="btn" id="dump-split" type="button">Turn lines into tasks</button>
+            <span class="hint">Keeps whatever you leave behind.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="card-done">
+        <header>
+          <h2>Done today</h2>
+          <span class="meta" id="done-meta"></span>
+        </header>
+        <div class="body" id="done"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card" id="card-next">
+        <header>
+          <h2>Next up</h2>
+          <span class="meta">ranked by urgency</span>
+        </header>
+        <div class="body next" id="next"></div>
+      </section>
+
+      <section class="card" id="card-plan">
+        <header>
+          <h2>Day plan</h2>
+          <span class="meta" id="plan-meta"></span>
+        </header>
+        <div class="body pad">
+          <div class="plan-controls">
+            <label class="hint" for="hours">Hours I actually have</label>
+            <input id="hours" type="number" min=".5" max="16" step=".5" value="4">
+            <button class="btn" id="build-plan" type="button">Build plan</button>
+            <button class="btn" id="clear-plan" type="button">Clear</button>
+          </div>
+        </div>
+        <div id="plan"></div>
+      </section>
+
+      <section class="card" id="card-week">
+        <header>
+          <h2>Week load</h2>
+          <span class="meta" id="week-meta"></span>
+        </header>
+        <div class="week" id="week"></div>
+      </section>
+
+      <section class="card" id="card-projects">
+        <header>
+          <h2>Projects</h2>
+          <span class="meta" id="proj-meta"></span>
+        </header>
+        <div class="body projects" id="projects"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span class="save-state" id="save-state" data-s="idle"><i class="dot"></i><span id="save-text">Loading</span></span>
+    <span class="foot-acts">
+      <button class="btn" id="export" type="button">Export JSON</button>
+      <button class="btn" id="import" type="button">Import JSON</button>
+      <input type="file" id="file" accept="application/json,.json" hidden>
+    </span>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "daybook.v1";
+  var REMOTE_PATH = "data/state.json";
+  var DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  var DAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  var MONTH_FULL = ["January", "February", "March", "April", "May", "June", "July",
+    "August", "September", "October", "November", "December"];
+
+  var state = blank();
+  var artifact = null;
+  var filter = null;
+  var saveTimer = null;
+  var toastTimer = null;
+
+  /* ------------------------------------------------------------------ dates */
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function keyOf(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function fromKey(k) { var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function startOfToday() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+  function todayKey() { return keyOf(startOfToday()); }
+  function addDays(d, n) { var c = new Date(d.getTime()); c.setDate(c.getDate() + n); return c; }
+  function daysFromToday(key) {
+    return Math.round((fromKey(key).getTime() - startOfToday().getTime()) / 86400000);
+  }
+
+  function dueLabel(key) {
+    var n = daysFromToday(key);
+    if (n === 0) return "today";
+    if (n === 1) return "tomorrow";
+    if (n === -1) return "yesterday";
+    if (n < 0) return Math.abs(n) + "d late";
+    var d = fromKey(key);
+    if (n < 7) return DAY_FULL[d.getDay()].slice(0, 3).toLowerCase();
+    return MONTHS[d.getMonth()] + " " + d.getDate();
+  }
+
+  function estLabel(min) {
+    if (!min) return "";
+    if (min < 60) return min + "m";
+    var h = Math.floor(min / 60), m = min % 60;
+    return m ? h + "h" + pad(m) : h + "h";
+  }
+
+  /* ------------------------------------------------------------------ parse */
+
+  function parseDue(tok) {
+    var t = startOfToday(), m;
+    if (tok === "today" || tok === "tod") return keyOf(t);
+    if (tok === "tomorrow" || tok === "tmr" || tok === "tom") return keyOf(addDays(t, 1));
+    if ((m = tok.match(/^\+(\d+)d?$/))) return keyOf(addDays(t, +m[1]));
+    if ((m = tok.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) {
+      return keyOf(new Date(+m[1], +m[2] - 1, +m[3]));
+    }
+    if ((m = tok.match(/^(\d{1,2})\/(\d{1,2})$/))) {
+      var cand = new Date(t.getFullYear(), +m[1] - 1, +m[2]);
+      if (cand < t) cand = new Date(t.getFullYear() + 1, +m[1] - 1, +m[2]);
+      return keyOf(cand);
+    }
+    if ((m = tok.match(/^([a-z]{3,})[-\s]?(\d{1,2})$/))) {
+      var mi = MONTHS.indexOf(m[1].slice(0, 3));
+      if (mi > -1) {
+        var c2 = new Date(t.getFullYear(), mi, +m[2]);
+        if (c2 < t) c2 = new Date(t.getFullYear() + 1, mi, +m[2]);
+        return keyOf(c2);
+      }
+    }
+    var di = DAYS.indexOf(tok.slice(0, 3));
+    if (di > -1 && tok.length >= 3) {
+      var delta = (di - t.getDay() + 7) % 7;
+      return keyOf(addDays(t, delta));
+    }
+    return null;
+  }
+
+  function parse(input) {
+    var text = " " + String(input || "").trim() + " ";
+    var out = { title: "", project: null, pri: 3, due: null, est: null, unknown: [] };
+
+    text = text.replace(/\s#([\w][\w.-]*)/g, function (_m, g) { out.project = g.toLowerCase(); return " "; });
+
+    text = text.replace(/\s~(\d+(?:\.\d+)?)\s*(h|hr|hrs|m|min|mins)?(?=\s)/gi, function (_m, num, unit) {
+      var v = parseFloat(num);
+      var isHours = unit && /^h/i.test(unit);
+      out.est = Math.max(5, Math.round(isHours ? v * 60 : v));
+      return " ";
+    });
+
+    text = text.replace(/\s@([\w+\/-]+)/g, function (m, g) {
+      var due = parseDue(g.toLowerCase());
+      if (due) { out.due = due; return " "; }
+      out.unknown.push("@" + g);
+      return m;
+    });
+
+    text = text.replace(/\s(!{1,2})(?=\s)/g, function (_m, g) {
+      out.pri = g.length === 2 ? 1 : 2;
+      return " ";
+    });
+
+    out.title = text.replace(/\s+/g, " ").trim();
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ state */
+
+  function blank() {
+    return { v: 1, focus: "", tasks: [], notes: "", history: {}, plan: null, updatedAt: 0 };
+  }
+
+  function normalise(s) {
+    if (!s || typeof s !== "object") return null;
+    var out = blank();
+    out.focus = typeof s.focus === "string" ? s.focus : "";
+    out.notes = typeof s.notes === "string" ? s.notes : "";
+    out.history = (s.history && typeof s.history === "object") ? s.history : {};
+    out.plan = (s.plan && typeof s.plan === "object") ? s.plan : null;
+    out.updatedAt = typeof s.updatedAt === "number" ? s.updatedAt : 0;
+    out.tasks = Array.isArray(s.tasks) ? s.tasks.filter(function (t) {
+      return t && typeof t.title === "string";
+    }).map(function (t) {
+      return {
+        id: t.id || uid(),
+        title: t.title,
+        project: t.project || null,
+        pri: t.pri === 1 || t.pri === 2 ? t.pri : 3,
+        due: typeof t.due === "string" ? t.due : null,
+        est: typeof t.est === "number" ? t.est : null,
+        done: !!t.done,
+        doneAt: t.doneAt || null,
+        created: t.created || Date.now()
+      };
+    }) : [];
+    return out;
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function open() { return state.tasks.filter(function (t) { return !t.done; }); }
+
+  function visible() {
+    return open().filter(function (t) { return !filter || t.project === filter; });
+  }
+
+  /* ------------------------------------------------------------------ score */
+
+  function score(t) {
+    var n = 0, why = [];
+    if (t.pri === 1) { n += 50; why.push({ k: "crit", s: "critical" }); }
+    else if (t.pri === 2) { n += 28; why.push({ k: "", s: "high" }); }
+    else n += 10;
+
+    if (t.due) {
+      var d = daysFromToday(t.due);
+      if (d < 0) { n += Math.min(100, 55 + Math.abs(d) * 4); why.push({ k: "crit", s: Math.abs(d) + "d late" }); }
+      else if (d === 0) { n += 44; why.push({ k: "warn", s: "due today" }); }
+      else if (d === 1) { n += 26; why.push({ k: "warn", s: "due tomorrow" }); }
+      else if (d <= 7) { n += Math.max(6, 20 - d * 2); why.push({ k: "", s: "due " + dueLabel(t.due) }); }
+      else n += 2;
+    }
+
+    var age = Math.floor((Date.now() - (t.created || Date.now())) / 86400000);
+    if (age >= 3) { n += Math.min(15, age * 1.5); why.push({ k: "", s: "sat " + age + "d" }); }
+
+    if (t.est && t.est <= 15) { n += 6; why.push({ k: "good", s: "quick win" }); }
+    else if (t.est && t.est <= 30) n += 3;
+
+    return { n: n, why: why.slice(0, 3) };
+  }
+
+  function byScore(a, b) { return score(b).n - score(a).n; }
+
+  /* ------------------------------------------------------------------ mutate */
+
+  function touch(rerender) {
+    state.updatedAt = Date.now();
+    scheduleSave();
+    if (rerender !== false) render();
+  }
+
+  function addTask(input) {
+    var p = parse(input);
+    if (!p.title) return null;
+    var t = {
+      id: uid(), title: p.title, project: p.project, pri: p.pri,
+      due: p.due, est: p.est, done: false, doneAt: null, created: Date.now()
+    };
+    state.tasks.unshift(t);
+    return t;
+  }
+
+  function find(id) {
+    for (var i = 0; i < state.tasks.length; i++) if (state.tasks[i].id === id) return state.tasks[i];
+    return null;
+  }
+
+  function complete(id) {
+    var t = find(id);
+    if (!t || t.done) return;
+    t.done = true;
+    t.doneAt = Date.now();
+    var k = todayKey();
+    state.history[k] = (state.history[k] || 0) + 1;
+    if (state.plan && state.plan.ids) {
+      state.plan.ids = state.plan.ids.filter(function (i) { return i !== id; });
+    }
+    touch();
+    toast("Done — " + t.title.slice(0, 48));
+  }
+
+  function reopen(id) {
+    var t = find(id);
+    if (!t || !t.done) return;
+    var k = t.doneAt ? keyOf(new Date(t.doneAt)) : todayKey();
+    if (state.history[k]) state.history[k] = Math.max(0, state.history[k] - 1);
+    t.done = false;
+    t.doneAt = null;
+    touch();
+  }
+
+  function streak() {
+    var n = 0, d = startOfToday();
+    if (!(state.history[keyOf(d)] > 0)) d = addDays(d, -1);
+    while (state.history[keyOf(d)] > 0) { n++; d = addDays(d, -1); }
+    return n;
+  }
+
+  /* ------------------------------------------------------------------ persist */
+
+  function pickNewer(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    return (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a;
+  }
+
+  function setSave(s, text) {
+    var el = document.getElementById("save-state");
+    el.setAttribute("data-s", s);
+    document.getElementById("save-text").textContent = text;
+  }
+
+  function scheduleSave() {
+    setSave("pending", artifact ? "Saving…" : "Saving in this browser…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 1200);
+  }
+
+  function flush() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+    if (!artifact) { setSave("synced", "Saved in this browser"); return; }
+    setSave("saving", "Saving…");
+    var payload = {};
+    payload[REMOTE_PATH] = JSON.stringify(state);
+    artifact.publish(payload).then(function () {
+      setSave("synced", "Saved to this page");
+    })["catch"](function (err) {
+      var code = err && err.code;
+      if (code === "rate_limited") { setSave("saving", "Saving…"); setTimeout(flush, 5000); return; }
+      if (code === "conflict") {
+        setSave("conflict", "Newer version elsewhere — reloading");
+        setTimeout(function () { location.reload(); }, 900);
+        return;
+      }
+      artifact = null;
+      setSave("synced", "Saved in this browser");
+    });
+  }
+
+  /* ------------------------------------------------------------------ render */
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function chips(t) {
+    var out = "";
+    if (t.project) out += '<span class="chip proj">#' + esc(t.project) + "</span>";
+    if (t.pri === 1) out += '<span class="chip crit">critical</span>';
+    else if (t.pri === 2) out += '<span class="chip">high</span>';
+    if (t.due) {
+      var d = daysFromToday(t.due);
+      var k = d < 0 ? "crit" : d === 0 ? "warn" : "";
+      out += '<span class="chip ' + k + '">' + esc(dueLabel(t.due)) + "</span>";
+    }
+    if (t.est) out += '<span class="chip">' + esc(estLabel(t.est)) + "</span>";
+    return out;
+  }
+
+  function renderMast() {
+    var d = new Date();
+    document.getElementById("weekday").textContent = DAY_FULL[d.getDay()];
+    document.getElementById("bigdate").textContent = d.getDate() + " " + MONTH_FULL[d.getMonth()];
+
+    var o = open(), today = todayKey();
+    var overdue = o.filter(function (t) { return t.due && t.due < today; }).length;
+    var due = o.filter(function (t) { return t.due === today; }).length;
+    var mins = o.filter(function (t) { return t.due && t.due <= today; })
+      .reduce(function (s, t) { return s + (t.est || 0); }, 0);
+
+    var cards = [
+      { n: o.length, l: "open", c: "" },
+      { n: overdue, l: "overdue", c: overdue ? "is-crit" : "" },
+      { n: due, l: "due today", c: due ? "is-warn" : "" },
+      { n: mins ? estLabel(mins) : "—", l: "on the clock", c: "" },
+      { n: streak(), l: "day streak", c: "" }
+    ];
+
+    document.getElementById("stats").innerHTML = cards.map(function (s) {
+      return '<div class="stat ' + s.c + '"><b>' + esc(s.n) + "</b><span>" + s.l + "</span></div>";
+    }).join("");
+
+    var f = document.getElementById("focus");
+    if (document.activeElement !== f) f.value = state.focus;
+  }
+
+  function rowHTML(t) {
+    return '<div class="row pri' + t.pri + '" data-id="' + t.id + '">' +
+      '<button class="tick" type="button" data-act="done" title="Mark done" aria-label="Mark done"></button>' +
+      '<div class="row-main">' +
+        '<div class="title" data-act="edit" contenteditable="true" spellcheck="false">' + esc(t.title) + "</div>" +
+        '<div class="row-chips">' + chips(t) + "</div>" +
+      "</div>" +
+      '<div class="row-acts">' +
+        '<button class="mini" type="button" data-act="snooze" title="Push a day">+1d</button>' +
+        '<button class="mini" type="button" data-act="today" title="Pull to today">today</button>' +
+        '<button class="mini danger" type="button" data-act="del" title="Delete">del</button>' +
+      "</div>" +
+    "</div>";
+  }
+
+  function renderLists() {
+    var today = todayKey(), items = visible(), html = "";
+    var groups = [
+      { k: "od", label: "Overdue", pick: function (t) { return t.due && t.due < today; } },
+      { k: "td", label: "Today", pick: function (t) { return t.due === today; } },
+      { k: "", label: "Next seven days", pick: function (t) { var d = t.due ? daysFromToday(t.due) : null; return d !== null && d > 0 && d <= 7; } },
+      { k: "", label: "Later", pick: function (t) { return t.due && daysFromToday(t.due) > 7; } },
+      { k: "", label: "No date", pick: function (t) { return !t.due; } }
+    ];
+
+    groups.forEach(function (g) {
+      var list = items.filter(g.pick).sort(function (a, b) {
+        if (a.due !== b.due) return (a.due || "9999") < (b.due || "9999") ? -1 : 1;
+        return a.pri - b.pri;
+      });
+      if (!list.length) return;
+      var mins = list.reduce(function (s, t) { return s + (t.est || 0); }, 0);
+      html += '<div class="group-head ' + g.k + '"><span>' + g.label + "</span><span>" +
+        list.length + (mins ? " · " + estLabel(mins) : "") + "</span></div>";
+      html += list.map(rowHTML).join("");
+    });
+
+    document.getElementById("lists").innerHTML = html ||
+      '<p class="empty">' + (filter
+        ? "Nothing open in #" + esc(filter) + ". Click the project again to clear the filter."
+        : "Empty. Write the first thing in the bar above — it is the only field you have to fill in.") + "</p>";
+
+    document.getElementById("list-meta").textContent = filter
+      ? "#" + filter + " · " + items.length + " open"
+      : items.length + " open";
+  }
+
+  function renderNext() {
+    var top = visible().sort(byScore).slice(0, 3);
+    if (!top.length) {
+      document.getElementById("next").innerHTML = '<p class="empty">Nothing queued. Enjoy it.</p>';
+      return;
+    }
+    document.getElementById("next").innerHTML = top.map(function (t, i) {
+      var s = score(t);
+      return '<div class="next-item" data-id="' + t.id + '">' +
+        '<span class="rank">' + (i + 1) + "</span>" +
+        "<div>" +
+          '<div class="title" data-act="edit" contenteditable="true" spellcheck="false">' + esc(t.title) + "</div>" +
+          '<div class="why">' + s.why.map(function (w) {
+            return '<span class="chip ' + w.k + '">' + esc(w.s) + "</span>";
+          }).join("") + (t.project ? '<span class="chip proj">#' + esc(t.project) + "</span>" : "") + "</div>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  function renderPlan() {
+    var el = document.getElementById("plan");
+    var meta = document.getElementById("plan-meta");
+    var plan = state.plan;
+
+    if (!plan || plan.date !== todayKey() || !plan.ids || !plan.ids.length) {
+      el.innerHTML = "";
+      meta.textContent = "not built";
+      return;
+    }
+
+    var start = new Date();
+    start.setMinutes(Math.ceil(start.getMinutes() / 15) * 15, 0, 0);
+    var cursor = new Date(start.getTime());
+    var used = 0, html = "";
+
+    plan.ids.forEach(function (id) {
+      var t = find(id);
+      if (!t || t.done) return;
+      var mins = t.est || 30;
+      var hh = cursor.getHours(), mm = cursor.getMinutes();
+      html += '<div class="slot" data-id="' + t.id + '">' +
+        "<time>" + pad(hh) + ":" + pad(mm) + "</time>" +
+        '<div><div class="t">' + esc(t.title) + "</div>" +
+        '<div class="row-chips" style="margin-top:4px">' +
+          '<span class="chip">' + estLabel(mins) + "</span>" +
+          (t.project ? '<span class="chip proj">#' + esc(t.project) + "</span>" : "") +
+        "</div></div></div>";
+      cursor = new Date(cursor.getTime() + mins * 60000);
+      used += mins;
+    });
+
+    el.innerHTML = html;
+    meta.textContent = html
+      ? estLabel(used) + " of " + estLabel(plan.budget) + " · ends " + pad(cursor.getHours()) + ":" + pad(cursor.getMinutes())
+      : "all cleared";
+  }
+
+  function renderWeek() {
+    var today = startOfToday(), o = open(), html = "", peak = 30;
+    var days = [];
+
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(today, i), k = keyOf(d);
+      var list = o.filter(function (t) { return i === 0 ? (t.due && t.due <= k) : t.due === k; });
+      var mins = list.reduce(function (s, t) { return s + (t.est || 30); }, 0);
+      peak = Math.max(peak, mins);
+      days.push({ d: d, k: k, n: list.length, mins: mins });
+    }
+
+    days.forEach(function (x, i) {
+      var h = x.mins ? Math.max(4, Math.round((x.mins / peak) * 38)) : 0;
+      html += '<button class="day ' + (i === 0 ? "today " : "") + (x.mins > 360 ? "over" : "") + '" type="button" ' +
+        'data-act="pick-day" data-day="' + x.k + '" title="' + x.n + ' task(s), ' + estLabel(x.mins) + '">' +
+        '<span class="dw">' + DAYS[x.d.getDay()] + "</span>" +
+        '<span class="dn">' + x.d.getDate() + "</span>" +
+        '<span class="load">' + (h ? '<i style="height:' + h + 'px"></i>' : "") + "</span>" +
+        '<span class="mins">' + (x.mins ? estLabel(x.mins) : "·") + "</span>" +
+      "</button>";
+    });
+
+    document.getElementById("week").innerHTML = html;
+    var total = days.reduce(function (s, x) { return s + x.mins; }, 0);
+    document.getElementById("week-meta").textContent = total ? estLabel(total) + " booked" : "clear";
+  }
+
+  function renderProjects() {
+    var map = {};
+    state.tasks.forEach(function (t) {
+      if (!t.project) return;
+      var m = map[t.project] || (map[t.project] = { open: 0, done: 0 });
+      if (t.done) m.done++; else m.open++;
+    });
+
+    var names = Object.keys(map).sort(function (a, b) { return map[b].open - map[a].open; });
+    if (!names.length) {
+      document.getElementById("projects").innerHTML =
+        '<p class="empty">Tag a task with <span class="chip proj">#name</span> and it becomes a project here.</p>';
+      document.getElementById("proj-meta").textContent = "none yet";
+      return;
+    }
+
+    document.getElementById("projects").innerHTML = names.map(function (n) {
+      var m = map[n], total = m.open + m.done;
+      var pct = total ? Math.round((m.done / total) * 100) : 0;
+      return '<button class="proj-row" type="button" data-act="filter" data-project="' + esc(n) + '" ' +
+        'aria-pressed="' + (filter === n) + '">' +
+        '<span><span class="proj-name">#' + esc(n) + "</span>" +
+        '<span class="bar"><i style="width:' + pct + '%"></i></span></span>' +
+        '<span class="proj-count">' + m.open + " open · " + pct + "%</span>" +
+      "</button>";
+    }).join("");
+
+    document.getElementById("proj-meta").textContent = names.length + (filter ? " · filtered" : "");
+  }
+
+  function renderDone() {
+    var today = todayKey();
+    var list = state.tasks.filter(function (t) {
+      return t.done && t.doneAt && keyOf(new Date(t.doneAt)) === today;
+    }).sort(function (a, b) { return b.doneAt - a.doneAt; });
+
+    document.getElementById("done-meta").textContent = list.length
+      ? list.length + " cleared" : "nothing yet";
+
+    document.getElementById("done").innerHTML = list.length
+      ? list.map(function (t) {
+          return '<div class="done-row" data-id="' + t.id + '">' +
+            '<span class="t">' + esc(t.title) + "</span>" +
+            '<button class="mini" type="button" data-act="undo">undo</button>' +
+          "</div>";
+        }).join("")
+      : '<p class="empty">The first one is the hard one.</p>';
+  }
+
+  function renderDump() {
+    var el = document.getElementById("dump");
+    if (document.activeElement !== el) el.value = state.notes;
+  }
+
+  function render() {
+    renderMast();
+    renderLists();
+    renderNext();
+    renderPlan();
+    renderWeek();
+    renderProjects();
+    renderDone();
+    renderDump();
+  }
+
+  function renderParse() {
+    var val = document.getElementById("capture").value;
+    var box = document.getElementById("parse");
+    if (!val.trim()) { box.innerHTML = ""; return; }
+    var p = parse(val);
+    var out = '<span class="chip good">' + esc(p.title || "(no title yet)") + "</span>";
+    if (p.project) out += '<span class="chip proj">#' + esc(p.project) + "</span>";
+    if (p.pri === 1) out += '<span class="chip crit">critical</span>';
+    else if (p.pri === 2) out += '<span class="chip">high</span>';
+    if (p.due) out += '<span class="chip warn">' + esc(dueLabel(p.due)) + " · " + esc(p.due) + "</span>";
+    if (p.est) out += '<span class="chip">' + esc(estLabel(p.est)) + "</span>";
+    p.unknown.forEach(function (u) { out += '<span class="chip crit">' + esc(u) + " not a date</span>"; });
+    box.innerHTML = out;
+  }
+
+  function toast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("on"); }, 2200);
+  }
+
+  /* ------------------------------------------------------------------ events */
+
+  function submitCapture() {
+    var input = document.getElementById("capture");
+    var t = addTask(input.value);
+    if (!t) { input.focus(); return; }
+    input.value = "";
+    renderParse();
+    touch();
+    input.focus();
+  }
+
+  document.getElementById("add").addEventListener("click", submitCapture);
+
+  document.getElementById("capture").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); submitCapture(); }
+  });
+
+  document.getElementById("capture").addEventListener("input", renderParse);
+
+  document.getElementById("focus").addEventListener("change", function () {
+    state.focus = this.value.trim();
+    touch(false);
+  });
+
+  document.getElementById("dump").addEventListener("input", function () {
+    state.notes = this.value;
+    state.updatedAt = Date.now();
+    scheduleSave();
+  });
+
+  document.getElementById("dump-split").addEventListener("click", function () {
+    var el = document.getElementById("dump");
+    var lines = el.value.split("\n");
+    var kept = [], made = 0;
+    lines.forEach(function (line) {
+      if (!line.trim()) return;
+      if (addTask(line)) made++; else kept.push(line);
+    });
+    if (!made) { toast("No lines to turn into tasks."); return; }
+    state.notes = kept.join("\n");
+    el.value = state.notes;
+    touch();
+    toast(made + (made === 1 ? " task" : " tasks") + " captured.");
+  });
+
+  document.getElementById("build-plan").addEventListener("click", function () {
+    var hours = parseFloat(document.getElementById("hours").value) || 4;
+    var budget = Math.round(hours * 60);
+    var ids = [], used = 0, skipped = 0;
+    visible().sort(byScore).forEach(function (t) {
+      var e = t.est || 30;
+      if (used + e <= budget) { ids.push(t.id); used += e; }
+      else skipped++;
+    });
+    if (!ids.length) {
+      toast(open().length ? "Nothing fits in " + hours + "h — try a bigger budget." : "Nothing to plan.");
+      return;
+    }
+    state.plan = { date: todayKey(), ids: ids, budget: budget };
+    touch();
+    toast(ids.length + " in the plan" + (skipped ? ", " + skipped + " left out" : "") + ".");
+  });
+
+  document.getElementById("clear-plan").addEventListener("click", function () {
+    state.plan = null;
+    touch();
+  });
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var act = btn.getAttribute("data-act");
+    var holder = btn.closest("[data-id]");
+    var id = holder && holder.getAttribute("data-id");
+
+    if (act === "done") { complete(id); return; }
+    if (act === "undo") { reopen(id); return; }
+
+    if (act === "del") {
+      var t = find(id);
+      if (!t) return;
+      state.tasks = state.tasks.filter(function (x) { return x.id !== id; });
+      touch();
+      toast("Deleted — " + t.title.slice(0, 48));
+      return;
+    }
+
+    if (act === "snooze" || act === "today") {
+      var task = find(id);
+      if (!task) return;
+      if (act === "today") task.due = todayKey();
+      else task.due = keyOf(addDays(task.due ? fromKey(task.due) : startOfToday(), 1));
+      touch();
+      return;
+    }
+
+    if (act === "filter") {
+      var p = btn.getAttribute("data-project");
+      filter = filter === p ? null : p;
+      render();
+      return;
+    }
+
+    if (act === "pick-day") {
+      var input = document.getElementById("capture");
+      var day = btn.getAttribute("data-day");
+      input.value = input.value.replace(/\s@[\w+\/-]+/g, "").trim() + " @" + day + " ";
+      input.focus();
+      renderParse();
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName) && !e.target.isContentEditable) {
+      e.preventDefault();
+      document.getElementById("capture").focus();
+    }
+    if (e.key === "Escape" && e.target.id === "capture") e.target.blur();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var el = e.target;
+    if (!el.isContentEditable || el.getAttribute("data-act") !== "edit") return;
+    e.preventDefault();
+    el.blur();
+  }, true);
+
+  document.addEventListener("blur", function (e) {
+    var el = e.target;
+    if (!el.isContentEditable || el.getAttribute("data-act") !== "edit") return;
+    var holder = el.closest("[data-id]");
+    var t = holder && find(holder.getAttribute("data-id"));
+    if (!t) return;
+    var text = el.textContent.replace(/\s+/g, " ").trim();
+    if (!text || text === t.title) { render(); return; }
+    var p = parse(text);
+    t.title = p.title || text;
+    if (p.project) t.project = p.project;
+    if (p.due) t.due = p.due;
+    if (p.est) t.est = p.est;
+    if (p.pri !== 3) t.pri = p.pri;
+    touch();
+  }, true);
+
+  /* ------------------------------------------------------------------ backup */
+
+  document.getElementById("export").addEventListener("click", function () {
+    var name = "day-book-" + todayKey() + ".json";
+    var data = JSON.stringify(state, null, 2);
+    var use = window.claude && typeof window.claude.use === "function"
+      ? window.claude.use("downloads") : Promise.resolve(null);
+
+    use.then(function (downloads) {
+      if (downloads) {
+        return downloads.save({ filename: name, data: data }).then(function () {
+          toast("Exported " + name);
+        })["catch"](function (err) {
+          if (err && err.code === "declined") return;
+          fallbackDownload(name, data);
+        });
+      }
+      fallbackDownload(name, data);
+    })["catch"](function () { fallbackDownload(name, data); });
+  });
+
+  function fallbackDownload(name, data) {
+    try {
+      var url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      toast("Exported " + name);
+    } catch (e) {
+      toast("Could not export here — copy the page's data manually.");
+    }
+  }
+
+  document.getElementById("import").addEventListener("click", function () {
+    document.getElementById("file").click();
+  });
+
+  document.getElementById("file").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var next;
+      try { next = normalise(JSON.parse(String(reader.result))); }
+      catch (err) { toast("That file is not a Day Book export."); return; }
+      if (!next) { toast("That file is not a Day Book export."); return; }
+      state = next;
+      touch();
+      toast("Imported " + state.tasks.length + " task(s).");
+    };
+    reader.readAsText(f);
+    this.value = "";
+  });
+
+  /* ------------------------------------------------------------------ boot */
+
+  function readLocal() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      return raw ? normalise(JSON.parse(raw)) : null;
+    } catch (e) { return null; }
+  }
+
+  function readRemote() {
+    try {
+      return fetch(REMOTE_PATH, { cache: "no-store" }).then(function (r) {
+        return r.ok ? r.json() : null;
+      }).then(normalise)["catch"](function () { return null; });
+    } catch (e) { return Promise.resolve(null); }
+  }
+
+  function getArtifact() {
+    try {
+      if (window.claude && typeof window.claude.use === "function") {
+        return window.claude.use("artifact")["catch"](function () { return null; });
+      }
+    } catch (e) { /* not in the artifact runtime */ }
+    return Promise.resolve(null);
+  }
+
+  getArtifact().then(function (handle) {
+    artifact = handle;
+    // Only the artifact runtime keeps a remote copy; standalone hosting has
+    // nothing to fetch, so don't ask and don't log a 404 on every load.
+    return artifact ? readRemote() : null;
+  }).then(function (remote) {
+    state = pickNewer(readLocal(), remote) || blank();
+    setSave("synced", artifact ? "Saved to this page" : "Saved in this browser");
+    render();
+    renderParse();
+    document.getElementById("capture").focus();
+  });
+})();
+</script>
+</body>
+</html>
