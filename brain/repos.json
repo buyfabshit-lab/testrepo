@@ -1,0 +1,11 @@
+{
+  "_comment": "Repos the brain is built from. Edit this list, then run: npm run ingest",
+  "repos": [
+    "buyfabshit-lab/testrepo",
+    "buyfabshit-lab/skrewu",
+    "buyfabshit-lab/skrewu2bitch",
+    "buyfabshit-lab/mf-site",
+    "buyfabshit-lab/deathcorps-3d-site",
+    "buyfabshit-lab/Owner-avatar-deathcorps-3d-site"
+  ]
+}
