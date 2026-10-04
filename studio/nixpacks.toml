@@ -1,0 +1,13 @@
+# Apparel Design Studio: pin Node 22, explicit install/build/start phases.
+# Set the Railway service's Root Directory to `studio`.
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm ci --include=dev --no-audit --no-fund"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
