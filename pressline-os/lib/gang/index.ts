@@ -81,6 +81,18 @@ export async function buildNightly(opts: { runDate?: string; maxHeightIn?: numbe
   }
 
   const orderIds = Array.from(new Set(items.map((i) => i.orderId!)));
+  if (!opts.dryRun) {
+    // Jeff gets one 4×6 tag per order: what's on tonight's sheets for it, sizes, and where it ships.
+    for (const oid of orderIds) {
+      try {
+        const tag = await orderTag(oid, runDate);
+        if (!tag) continue;
+        const name = `${tag.number}-TAG-${runDate.replace(/-/g, "")}.pdf`;
+        await putObject(`gang-sheets/${runDate}/tags/${name}`, tag.pdf, "application/pdf");
+        await mirror({ path: [DRIVE_FOLDERS.PRINT_READY_OUT, runDate, "tags"], name, mimeType: "application/pdf", data: tag.pdf }).catch(() => null);
+      } catch (e) { console.warn("[gang] tag", e); }
+    }
+  }
   const film = layouts.reduce((s, l) => s + l.heightInches, 0);
   const report = `${runDate}: ${items.length} print(s) on ${layouts.length} sheet(s), ${film}" of film, ${orderIds.length} order(s).`;
   if (!opts.dryRun) {
@@ -130,4 +142,33 @@ export async function packingList(sheetName: string, layout: SheetLayout, orders
   y -= 20;
   t("Packed under Outlaw's watch.", 40, 11, bold);
   return Buffer.from(await pdf.save());
+}
+
+/** 4×6 in packing tag per order for Jeff (spec §7.7): number, customer, lines + sizes, ship-to, Outlaw stamp. */
+export async function orderTag(orderId: string, runDate: string): Promise<{ number: number; pdf: Buffer } | null> {
+  const { data: o } = await db().from("orders").select("number, due_date, rush, customer:customers(name, company, address), lines:order_lines(sizes, locations, blank:blanks(style, brand, color), design:designs(file_name))").eq("id", orderId).maybeSingle();
+  if (!o) return null;
+  type L = { sizes: Record<string, number> | null; locations: string[] | null; blank: { style: string | null; brand: string | null; color: string | null } | null; design: { file_name: string | null } | null };
+  const lines = ((o.lines ?? []) as unknown as L[]);
+  const cust = o.customer as unknown as { name: string | null; company: string | null; address: Record<string, string> | null } | null;
+  const pdf = await PDFDocument.create();
+  const font = await pdf.embedFont(StandardFonts.Helvetica), bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const W = 288, H = 432, M = 18;
+  const page = pdf.addPage([W, H]);
+  let y = H - M - 4;
+  const t = (s: string, size = 9, f = font, x = M) => { page.drawText(s.slice(0, 60), { x, y, size, font: f, color: rgb(0, 0, 0) }); y -= size + 4; };
+  t(`#${o.number}`, 26, bold);
+  t(`${cust?.company ?? cust?.name ?? "—"}${o.rush ? "   RUSH" : ""}`, 11, bold);
+  t(`Run ${runDate}${o.due_date ? ` · due ${o.due_date}` : ""}`, 8); y -= 4;
+  for (const l of lines) {
+    const sizes = Object.entries(l.sizes ?? {}).filter(([, n]) => Number(n) > 0).map(([k, n]) => `${k}×${n}`).join(" ");
+    t(`${[l.blank?.brand, l.blank?.style, l.blank?.color].filter(Boolean).join(" ") || "blank TBD"} · ${(l.locations ?? ["front"]).join("+")}`, 9, bold);
+    t(`${sizes || "sizes TBD"}`, 9);
+    if (l.design?.file_name) t(l.design.file_name, 7);
+    y -= 3;
+  }
+  const a = cust?.address;
+  if (a) { y -= 4; t("SHIP TO", 8, bold); for (const line of [a.name ?? cust?.name ?? "", a.company ?? "", a.street1 ?? "", a.street2 ?? "", `${a.city ?? ""}, ${a.state ?? ""} ${a.postalCode ?? ""}`].filter((x) => x.trim() && x.trim() !== ",")) t(line, 9); }
+  page.drawText("Packed under Outlaw's watch", { x: M, y: M, size: 8, font: bold, color: rgb(0.3, 0.3, 0.3) });
+  return { number: o.number, pdf: Buffer.from(await pdf.save()) };
 }

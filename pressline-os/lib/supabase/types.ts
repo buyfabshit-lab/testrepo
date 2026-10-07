@@ -17,6 +17,7 @@ export type CustomerRow = {
   email_opt_in: boolean | null; sms_consent_at: string | null; sms_consent_text: string | null;
   sms_consent_source: string | null; sms_consent_ip: string | null; sms_opted_out_at: string | null;
   screened_at: string | null; screen_result: string | null; created_at: string | null;
+  address: Json | null;
 }
 export type StaffRow = { id: string; name: string | null; role: "owner" | "production" | "print" | "ship" }
 export type VaultAssetRow = {

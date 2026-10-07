@@ -8,7 +8,7 @@ Money gates: anything that places a PO, charges live, or texts requires an expli
 |---|---|---|---|
 | GET | `/api/health` | none | `{ ok, version, time }` |
 | POST | `/api/capture` | none (rate-limited, service role) | `{ name, email, phone?, company?, source, niche?, website?, sms_consent?: boolean, consent_text?, email_opt_in? }` → `{ customer_id, screen: "pass"|"hold" }` |
-| POST | `/api/quotes` | staff or **n8n** | `{ customer_id, lines: [{ blank_id, method, sizes:{S:4}, locations:["front"], colors }], rush? }` → `{ quote }` (priced via price_rules) |
+| POST | `/api/quotes` | staff or **n8n** | `{ customer_id, lines: [{ blank_id? | blank_style+blank_color(+blank_brand, blank_cost), method, sizes:{S:4}, locations:["front"], colors }], rush?, dry_run? }` → `{ quote }` (priced via price_rules; live S&S picks are cached into `blanks`) |
 | GET | `/api/quotes/:id` | staff | → `{ quote, customer }` |
 | POST | `/api/quotes/:id/send` | staff | → `{ ok, proof_url }` (creates order NEW→QUOTED + proof_token, emails link) |
 | POST | `/api/quotes/:id/approve` | staff(owner) | one-tap → order APPROVED, `{ order, proof_url }` |

@@ -53,6 +53,7 @@ export function QuoteBuilder({ customers, rules, blanks }: { customers: BuilderC
           customer_id: customer.id, rush,
           lines: lines.map((l) => ({
             blank_id: l.blank?.id ?? null, blank_cost: Number(l.blank?.cost ?? 0), method: l.method, sizes: l.sizes,
+            blank_style: l.blank?.style ?? null, blank_brand: l.blank?.brand ?? null, blank_color: l.blank?.color ?? null,
             locations: l.locations.length ? l.locations : ["front"], colors: l.colors,
             label: l.blank ? `${l.blank.brand ?? ""} ${l.blank.style ?? ""} ${l.blank.color ?? ""}`.trim() : undefined,
           })),

@@ -48,7 +48,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <div className="space-y-4 lg:col-span-2">
           <Card title="Actions">
             <OrderActions orderId={order.id} orderNumber={order.number} status={(order.status ?? "NEW") as OrderStatus} proofToken={order.proof_token}
-              customer={c ? { name: c.name, company: c.company, phone: c.phone } : null} poLines={poLines} hasPo={(order.purchase_orders?.length ?? 0) > 0} />
+              customer={c ? { name: c.name, company: c.company, phone: c.phone, address: (c.address as Partial<import("@/components/board/LabelForm").ShipTo> | null) ?? null } : null} poLines={poLines} hasPo={(order.purchase_orders?.length ?? 0) > 0} />
           </Card>
 
           <Card title={`Lines · ${totalQty} pcs`} action={<span className="text-sm text-mf-muted">est. <Money value={estTotal} className="text-mf-gold" /></span>}>

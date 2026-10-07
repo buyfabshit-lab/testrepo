@@ -15,13 +15,20 @@ export const POST = route(async (req) => {
   if (!env.shopifyDcClientSecret() || a.length !== b.length || !timingSafeEqual(a, b)) return bad("bad hmac", 401);
   const topic = req.headers.get("x-shopify-topic") ?? "";
   if (topic !== "orders/create") return json({ ignored: topic });
-  const o = JSON.parse(raw) as { id: number; name: string; email?: string; customer?: { first_name?: string; last_name?: string }; line_items: Array<{ title: string; sku?: string; quantity: number; variant_title?: string; price: string }>; total_price: string };
+  const o = JSON.parse(raw) as {
+    id: number; name: string; email?: string; customer?: { first_name?: string; last_name?: string };
+    shipping_address?: { name?: string; company?: string | null; address1?: string; address2?: string | null; city?: string; province_code?: string; zip?: string; country_code?: string; phone?: string | null } | null;
+    line_items: Array<{ title: string; sku?: string; quantity: number; variant_title?: string; price: string }>; total_price: string;
+  };
+  const sa = o.shipping_address;
+  const address = sa ? { name: sa.name ?? "", company: sa.company ?? null, street1: sa.address1 ?? "", street2: sa.address2 ?? null, city: sa.city ?? "", state: sa.province_code ?? "", postalCode: sa.zip ?? "", country: sa.country_code ?? "US", phone: sa.phone ?? null } : null;
   const { data: store } = await db().from("stores").select("id").eq("slug", "death-corps").maybeSingle();
   const email = o.email?.toLowerCase();
   let customerId: string | null = null;
   if (email) {
     const { data: c } = await db().from("customers").select("id").ilike("email", email).maybeSingle();
-    customerId = c?.id ?? (await db().from("customers").insert({ email, name: [o.customer?.first_name, o.customer?.last_name].filter(Boolean).join(" ") || null, source: "checkout", brand_affinity: ["death_corps"] }).select("id").single()).data?.id ?? null;
+    customerId = c?.id ?? (await db().from("customers").insert({ email, name: [o.customer?.first_name, o.customer?.last_name].filter(Boolean).join(" ") || null, source: "checkout", brand_affinity: ["death_corps"], address: address as never }).select("id").single()).data?.id ?? null;
+    if (c?.id && address) await db().from("customers").update({ address: address as never }).eq("id", c.id);
   }
   const { data: order, error } = await db().from("orders").insert({ customer_id: customerId, store_id: store?.id ?? null, proof_token: newProofToken(), status: "PAID" }).select("id, number").single();
   if (error) throw new Error(error.message);

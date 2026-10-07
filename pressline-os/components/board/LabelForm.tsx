@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/Button";
 
 export type ShipTo = { name: string; company?: string | null; street1: string; street2?: string | null; city: string; state: string; postalCode: string; country?: string; phone?: string | null };
 
-/** Buys a label through POST /api/shipments. Customers have no stored address, so the ship-to is typed here. */
+/** Buys a label through POST /api/shipments. Prefills from customers.address when we have one (Shopify orders, prior labels). */
 export function LabelForm({ orderId, orderNumber, customer, onDone }: {
   orderId: string; orderNumber: number;
-  customer: { name?: string | null; company?: string | null; phone?: string | null } | null;
+  customer: { name?: string | null; company?: string | null; phone?: string | null; address?: Partial<ShipTo> | null } | null;
   onDone?: (shipment: unknown) => void;
 }) {
   const router = useRouter();
-  const [to, setTo] = useState<ShipTo>({ name: customer?.name ?? "", company: customer?.company ?? "", street1: "", street2: "", city: "", state: "CA", postalCode: "", phone: customer?.phone ?? "" });
+  const a = customer?.address ?? null;
+  const [to, setTo] = useState<ShipTo>({ name: a?.name || customer?.name || "", company: a?.company ?? customer?.company ?? "", street1: a?.street1 ?? "", street2: a?.street2 ?? "", city: a?.city ?? "", state: a?.state || "CA", postalCode: a?.postalCode ?? "", phone: a?.phone ?? customer?.phone ?? "" });
   const [weight, setWeight] = useState(16);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

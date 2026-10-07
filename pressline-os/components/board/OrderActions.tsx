@@ -6,13 +6,13 @@ import { api } from "@/components/ui/api";
 import { Button } from "@/components/ui/Button";
 import { StatusSelect } from "@/components/ui/StatusSelect";
 import { Toast, type ToastState } from "@/components/ui/Toast";
-import { LabelForm } from "./LabelForm";
+import { LabelForm, type ShipTo } from "./LabelForm";
 
 export type PoLine = { identifier: string; qty: number };
 
 export function OrderActions({ orderId, orderNumber, status, proofToken, customer, poLines, hasPo }: {
   orderId: string; orderNumber: number; status: OrderStatus; proofToken: string | null;
-  customer: { name?: string | null; company?: string | null; phone?: string | null } | null;
+  customer: { name?: string | null; company?: string | null; phone?: string | null ; address?: Partial<ShipTo> | null } | null;
   poLines: PoLine[]; hasPo: boolean;
 }) {
   const router = useRouter();

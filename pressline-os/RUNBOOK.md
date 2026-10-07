@@ -11,7 +11,7 @@
    -- undo: alter role authenticator reset pgrst.db_schemas; notify pgrst, 'reload config';
    ```
    Verify: `curl "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/orders?select=number&limit=1" -H "apikey: $ANON" -H "Accept-Profile: pressline"` returns `[]` (not `PGRST106`).
-2. **Migrations:** `supabase/migrations/0001_pressline_core.sql`, `0002_rls.sql`, `0003_seed.sql` are applied to staging (2026-10-07). For a new project: run them in order in the SQL editor, then Security Advisor → zero errors (see `docs/phase-proof/phase-1/`).
+2. **Migrations:** `supabase/migrations/0001_pressline_core.sql`, `0002_rls.sql`, `0003_seed.sql`, `0004_customer_address.sql` are applied to staging (2026-10-07). For a new project: run them in order in the SQL editor, then Security Advisor → zero errors (see `docs/phase-proof/phase-1/`).
 3. **Staff accounts:** create users in Supabase Auth (email/password), then `insert into pressline.staff (id, name, role) values ('<auth uid>', 'Justin', 'owner')` — roles: `owner | production | print | ship`.
 4. **Realtime:** `pressline.orders`, `events`, `quotes` are in the `supabase_realtime` publication (migration 0001).
 5. **Storage:** bucket `artwork` is private. The app signs URLs.

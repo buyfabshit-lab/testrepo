@@ -16,7 +16,7 @@ type Ship = ShipmentRow & { order: { id: string; number: number } | null };
 
 export default async function ShippingPage() {
   const [{ data: packed }, { data: shipments }] = await Promise.all([
-    db().from("orders").select("*, customer:customers(id,name,company,phone), lines:order_lines(id)").eq("status", "PACKED").order("due_date", { ascending: true, nullsFirst: false })
+    db().from("orders").select("*, customer:customers(id,name,company,phone,address), lines:order_lines(id)").eq("status", "PACKED").order("due_date", { ascending: true, nullsFirst: false })
       .overrideTypes<PackedOrder[], { merge: false }>(),
     db().from("shipments").select("*, order:orders(id, number)").order("shipped_at", { ascending: false }).limit(50).overrideTypes<Ship[], { merge: false }>(),
   ]);
