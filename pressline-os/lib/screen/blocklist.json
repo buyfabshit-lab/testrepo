@@ -1,0 +1,7 @@
+{
+  "_note": "Port of blocklist.json. Replace with the original list from Justin (Open Item). Terms are lowercase substrings; a hit sets HOLD and notifies Justin only. It never auto-rejects.",
+  "hate": ["1488", "14/88", "white power", "heil", "swastika", "zyklon", "kkk", "klan", "wpww", "14 words"],
+  "fraud": ["counterfeit", "replica logo", "knockoff", "knock-off", "bootleg"],
+  "trademark_watch": ["harley-davidson", "harley davidson", "supreme", "nike", "disney", "marvel", "nfl", "nba", "mlb", "nhl", "pokemon", "pokémon"],
+  "domains": ["manus.space", "manus.computer"]
+}

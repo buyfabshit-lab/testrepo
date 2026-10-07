@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Midnight Fusion palette — same tokens on dashboard, customer pages, and the world. */
+:root {
+  --mf-bg: #0d0c0a;
+  --mf-panel: #16140f;
+  --mf-line: #3a3326;
+  --mf-cream: #efe6d2;
+  --mf-muted: #a99c80;
+  --mf-dim: #7d725c;
+  --mf-gold: #d4a94f;
+  --mf-blood: #b3122b;
+  --mf-ok: #16a34a;
+  --mf-warn: #eab308;
+  --mf-bad: #dc2626;
+  color-scheme: dark;
+}
+@theme inline {
+  --color-mf-bg: var(--mf-bg);
+  --color-mf-panel: var(--mf-panel);
+  --color-mf-line: var(--mf-line);
+  --color-mf-cream: var(--mf-cream);
+  --color-mf-muted: var(--mf-muted);
+  --color-mf-dim: var(--mf-dim);
+  --color-mf-gold: var(--mf-gold);
+  --color-mf-blood: var(--mf-blood);
+  --font-display: "Big Shoulders Display", "Archivo Black", Impact, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "Courier New", monospace;
+}
+html, body { background: var(--mf-bg); color: var(--mf-cream); min-height: 100%; }
+body { font-family: Archivo, Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+a { color: var(--mf-gold); }
+.panel { background: var(--mf-panel); border: 1px solid var(--mf-line); }
+.btn { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1rem; border: 1px solid var(--mf-gold); color: var(--mf-gold); text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; font-weight: 700; cursor: pointer; background: transparent; }
+.btn:hover { background: var(--mf-gold); color: var(--mf-bg); }
+.btn-solid { background: var(--mf-gold); color: var(--mf-bg); }
+.btn-blood { border-color: var(--mf-blood); color: var(--mf-cream); background: var(--mf-blood); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.input { width: 100%; background: var(--mf-bg); border: 1px solid var(--mf-line); color: var(--mf-cream); padding: .55rem .7rem; }
+.input:focus { outline: none; border-color: var(--mf-gold); }
+.label { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mf-muted); margin-bottom: .3rem; }
+.badge { display: inline-block; padding: .15rem .5rem; font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; border-radius: 2px; }
