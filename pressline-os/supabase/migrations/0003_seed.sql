@@ -30,3 +30,7 @@ insert into pressline.blanks (supplier, style, brand, color, sizes, cost, suppli
   ('ss', '1717',  'Comfort Colors','Black','{S,M,L,XL,2XL,3XL}', 7.40, '1822'),
   ('ss', '18500', 'Gildan',       'Black', '{S,M,L,XL,2XL,3XL}', 11.90, '395'),
   ('ss', '6006',  'Yupoong',      'Black', '{OS}',               4.60, '4118');
+
+-- Arcade Cabinet: UV sticker "blank" (4×4 in die-cut sheet). Cost placeholder until Justin confirms.
+insert into pressline.blanks (supplier, style, brand, color, sizes, cost, supplier_style_id) values
+  ('other', 'UVSTICKER', 'Midnight Fusion', 'Black', '{4x4}', 0.35, null);
