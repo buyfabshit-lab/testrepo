@@ -4,6 +4,13 @@
 
 1. **Supabase project:** `midnight-fusion-staging` (`nbrahnwdrtezjpnuccrg`, us-west-1). PRESSLINE lives in schema **`pressline`** (the Standalone app owns `public`).
    **Expose the schema on the Data API:** Dashboard → Project Settings → Data API → *Exposed schemas* → add `pressline` → Save. Without this, every app query returns `PGRST106`. (Grants are already applied by migration 0001.)
+   *SQL fallback* (only if the dashboard toggle is unavailable; after this the dashboard no longer manages the list, so include every schema you expose):
+   ```sql
+   alter role authenticator set pgrst.db_schemas = 'public, graphql_public, pressline';
+   notify pgrst, 'reload config';
+   -- undo: alter role authenticator reset pgrst.db_schemas; notify pgrst, 'reload config';
+   ```
+   Verify: `curl "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/orders?select=number&limit=1" -H "apikey: $ANON" -H "Accept-Profile: pressline"` returns `[]` (not `PGRST106`).
 2. **Migrations:** `supabase/migrations/0001_pressline_core.sql`, `0002_rls.sql`, `0003_seed.sql` are applied to staging (2026-10-07). For a new project: run them in order in the SQL editor, then Security Advisor → zero errors (see `docs/phase-proof/phase-1/`).
 3. **Staff accounts:** create users in Supabase Auth (email/password), then `insert into pressline.staff (id, name, role) values ('<auth uid>', 'Justin', 'owner')` — roles: `owner | production | print | ship`.
 4. **Realtime:** `pressline.orders`, `events`, `quotes` are in the `supabase_realtime` publication (migration 0001).
@@ -22,6 +29,18 @@
 - Push to the branch Railway watches. Build = `next build`. Health = `/api/health`.
 - Migrations are not auto-applied. Apply new `supabase/migrations/*` by hand (SQL editor or `supabase db push`), then run Security Advisor. Zero errors before merge.
 - Smoke after deploy: `PRESSLINE_URL=https://<app> STAFF_EMAIL=… STAFF_PASSWORD=… NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_ANON_KEY=… npm run smoke:phase1`.
+
+## 1b. Vault ingest (spec §7.5)
+
+```bash
+# local folder (external drive mounted) — 500 per run, resumable, dedupes by sha256
+npm run vault:ingest -- --src /Volumes/VAULT/DeathCorps --brand death_corps --license mcg
+# Google Drive folder (share it with the service account first)
+npm run vault:ingest -- --src drive:<folderId> --brand odins_reich --license mcg
+# rehearse without touching the DB
+npm run vault:ingest -- --src ./samples --dry
+```
+Prove the first 5,000 with `--batch 5000`, check `/app/vault`, then run until "0 processed this run".
 
 ## 2. Env vars
 
