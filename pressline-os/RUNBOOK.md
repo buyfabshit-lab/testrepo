@@ -15,7 +15,7 @@
 3. **Staff accounts:** create users in Supabase Auth (email/password), then `insert into pressline.staff (id, name, role) values ('<auth uid>', 'Justin', 'owner')` — roles: `owner | production | print | ship`.
 4. **Realtime:** `pressline.orders`, `events`, `quotes` are in the `supabase_realtime` publication (migration 0001).
 5. **Storage:** bucket `artwork` is private. The app signs URLs.
-6. **Railway:** service from this repo (root directory `pressline-os` if deploying from the monorepo), Node 22, `npm run build` / `npm start`, health check `/api/health`. Set every var in `.env.example` (values never in git).
+6. **Railway:** service from `buyfabshit-lab/pressline-os` (Root Directory blank — the app is at the repo root), Node 22, `npm run build` / `npm start`, health check `/api/health`. Set every var in `.env.example` (values never in git).
 7. **Google Drive:** make a service account, put its JSON in `GOOGLE_SERVICE_ACCOUNT_JSON` (raw or base64), and **share the FUSION INTAKE folder** (`1hmg3Gh8H5o54hXizMWK1yVAbJ-HmYWEm`) with the service account email as Editor.
 8. **Stripe:** test keys first. Webhook endpoint `https://<app>/api/webhooks/stripe` for `checkout.session.completed`, `invoice.paid` → `STRIPE_WEBHOOK_SECRET`.
 9. **Shopify (deathcorps.shop / cae949-fc):** Dev Dashboard app → Client ID + Secret into `SHOPIFY_DC_CLIENT_ID/SECRET`. The app mints a token with the client-credentials grant and stores it in `pressline.integration_tokens`; n8n's `shopify-token-refresh` re-mints every 20h. Never use n8n's Shopify credential node. Webhook `orders/create` → `https://<app>/api/webhooks/shopify`.
@@ -77,9 +77,6 @@ The run is `POST /api/gang-runs/build` (HMAC) from n8n at 00:00 America/Los_Ange
 
 `SUPABASE_SERVICE_ROLE_KEY`, `N8N_WEBHOOK_SECRET`, `APP_SIGNING_SECRET`, `STRIPE_*`, `SHOPIFY_DC_CLIENT_SECRET`: rotate in the provider, update Railway, redeploy. Nothing is cached on disk. Open Item #7: confirm Outlaw's leaked credentials were rotated before Outlaw goes live.
 
-## 9. Moving this app to its own repo
+## 9. Where the code lives
 
-```bash
-git subtree split --prefix=pressline-os -b pressline-os-main
-git push git@github.com:buyfabshit-lab/pressline-os.git pressline-os-main:main
-```
+`buyfabshit-lab/pressline-os` (private) is the home. It was split out of `testrepo/pressline-os` on 2026-10-07 with full history; `testrepo` is no longer the source of truth. New work goes on a branch + PR against `main`.

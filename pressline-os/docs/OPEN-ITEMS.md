@@ -2,7 +2,7 @@
 
 From spec §13 plus what the build surfaced. Each one blocks the thing in **bold**.
 
-1. **Repo.** `buyfabshit-lab/pressline-os` could not be created from this session (GitHub integration returned 403 on repo creation). The app is built under `pressline-os/` in `testrepo` on branch `claude/pressline-os`. Create the empty private repo and run RUNBOOK §9 to split it out, or say "fold into Standalone" and the same tree moves there unchanged.
+1. ~~**Repo.**~~ Done 2026-10-07: `buyfabshit-lab/pressline-os` (private) holds this app at its root, split from `testrepo/pressline-os` with full history.
 2. **Supabase target.** Both active projects (`midnight-fusion-staging`, `oceanaire-midnight-press`) already carry the Standalone app's `public.orders` / `public.products`. PRESSLINE went into `midnight-fusion-staging` as schema `pressline`. Confirm that is the consolidated project, then add `pressline` to *Exposed schemas* (RUNBOOK §0.1). **Blocks: every app query.**
 3. **Printavo?** Bridge or skip. If bridge: Printavo API key → import customers/orders/quotes into `pressline.*`, verify counts, cut over.
 4. **Jeff + Danny costs** → replace the placeholder `price_rules` (migration 0003) with real numbers. **Blocks: real quotes.**
