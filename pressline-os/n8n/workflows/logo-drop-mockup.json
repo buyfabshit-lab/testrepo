@@ -1,0 +1,541 @@
+{
+  "name": "logo-drop-mockup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pressline/internal/logo-drop",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "848a630c-04f6-47b5-a4a3-66250e6101a8",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "6c16a519-22b4-4495-a57c-16b1a65aaf3c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5aa346f2-b3c2-44b7-abf7-0981a7d20b42",
+              "name": "secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "type": "string"
+            },
+            {
+              "id": "430a17e1-9ef6-45ae-a7b1-aa9c54b85bfe",
+              "name": "appUrl",
+              "value": "={{ $env.PRESSLINE_APP_URL || 'https://pressline.up.railway.app' }}",
+              "type": "string"
+            },
+            {
+              "id": "b992edd1-c287-4175-aae4-577286428462",
+              "name": "n8nUrl",
+              "value": "={{ $env.N8N_PUBLIC_URL || 'https://deathcorps187.app.n8n.cloud' }}",
+              "type": "string"
+            },
+            {
+              "id": "2afa3d13-dbf7-4dec-a568-ca1758c29195",
+              "name": "resendKey",
+              "value": "={{ $env.RESEND_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "046184c0-4968-42c9-a9fc-dda978e031eb",
+              "name": "hedraKey",
+              "value": "={{ $env.HEDRA_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "0122e3c8-5570-4433-a0b2-75d60d419e10",
+              "name": "justinEmail",
+              "value": "={{ $env.JUSTIN_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "a2d8d13c-09f2-44b2-a92b-6894609a9a0e",
+              "name": "jeffEmail",
+              "value": "={{ $env.JEFF_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "8129f2e4-8023-4ea0-a52f-4f8c8229216f",
+              "name": "dannyEmail",
+              "value": "={{ $env.DANNY_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "2a197586-ca54-4815-acc5-bcd9c3980f41",
+              "name": "reviewUrl",
+              "value": "={{ $env.REVIEW_URL || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "6988974e-a1a8-4530-adcc-f0309fe372cf",
+              "name": "from",
+              "value": "Midnight Fusion <orders@midnightfusion.co>",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "id": "e3759f4a-3fcc-4898-a4f9-59463d9165a8",
+      "name": "Secrets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ],
+      "notes": "Credential-free fallback: if $env is disabled on this n8n, paste literal values here. appUrl = PRESSLINE_APP_URL."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify X-Pressline-Signature (same scheme as lib/n8n/sign.ts). Throws on bad/stale.\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst hook = $('Webhook').first();\nconst headers = hook.json.headers || {};\nconst header = headers['x-pressline-signature'] || headers['X-Pressline-Signature'];\nif (!header) throw new Error('unsigned request: missing x-pressline-signature');\n// Raw body: Webhook node has \"Raw Body\" on, so the exact bytes are in binary.data.\nlet raw = null;\nif (hook.binary && hook.binary.data) {\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { /* helper unavailable */ }\n  if (raw === null) {\n    const d = hook.binary.data.data || '';\n    if (/^[A-Za-z0-9+/]+=*$/.test(d)) raw = Buffer.from(d, 'base64').toString('utf8');\n  }\n}\nif (raw === null) raw = JSON.stringify(hook.json.body ?? {}); // last resort: app sends compact JSON.stringify\nconst parts = Object.fromEntries(String(header).split(',').map((kv) => kv.split('=')));\nconst t = Number(parts.t); const v1 = parts.v1 || '';\nconst now = Math.floor(Date.now() / 1000);\nif (!Number.isFinite(t) || Math.abs(now - t) > 300) throw new Error('stale signature (older than 5 minutes)');\nconst expected = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\nconst a = Buffer.from(expected, 'hex'); const b = Buffer.from(v1, 'hex');\nif (a.length === 0 || a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('bad signature');\nlet payload; try { payload = JSON.parse(raw); } catch (e) { payload = hook.json.body ?? {}; }\nreturn [{ json: payload }];\n"
+      },
+      "id": "53606f0e-c239-4ca0-a254-7b3638eee1fb",
+      "name": "Verify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "notes": "Throws (stops the run) when the signature is missing, wrong, or older than 5 minutes."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ String($json.website).startsWith('http') ? $json.website : 'https://' + $json.website }}",
+        "options": {
+          "timeout": 20000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "dd895064-760b-41b7-a970-00afa5b78642",
+      "name": "Fetch website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceData": "json",
+        "dataPropertyName": "data",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "og",
+              "cssSelector": "meta[property='og:image']",
+              "returnValue": "attribute",
+              "attribute": "content"
+            },
+            {
+              "key": "logoImg",
+              "cssSelector": "img[src*='logo' i], img[class*='logo' i], img[id*='logo' i], header img",
+              "returnValue": "attribute",
+              "attribute": "src"
+            },
+            {
+              "key": "icon",
+              "cssSelector": "link[rel~='icon'], link[rel='apple-touch-icon']",
+              "returnValue": "attribute",
+              "attribute": "href"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1dad7edb-e427-4f0e-a8d9-b33db4589722",
+      "name": "Extract logo candidates",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Verify').first().json;\nconst site = String(lead.website).startsWith('http') ? lead.website : 'https://' + lead.website;\nconst j = $input.first().json || {};\nconst pick = [j.logoImg, j.og, j.icon].flat().find((v) => typeof v === 'string' && v.trim());\nif (!pick) return []; // no logo found: nothing to mock up, stop quietly\nlet logo_url; try { logo_url = new URL(pick.trim(), site).toString(); } catch (e) { return []; }\nreturn [{ json: { ...lead, logo_url } }];\n"
+      },
+      "id": "4d7dbdec-89df-4c50-a8d9-152f5345145f",
+      "name": "Pick logo URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst p = items[0].json;\ncalls.push({ path: '/api/imaging/clean', body: { customer_id: p.customer_id, image_url: p.logo_url }, meta: p });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "3bdbfa52-e83c-4292-af8e-efb850de44eb",
+      "name": "Sign: clean logo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "7008b8a8-3591-4b32-a5e5-5a1ab4cb9291",
+      "name": "POST /api/imaging/clean",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1820,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst lead = $('Pick logo URL').first().json;\nconst cleaned = items[0].json;\ncalls.push({ path: '/api/imaging/mockup', body: { customer_id: lead.customer_id, png_url: cleaned.png_url, blank: 'G5000', color: 'black', location: 'front' } });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "4b2fee2f-5de9-4c30-a52a-6a0313eceed4",
+      "name": "Sign: mockup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "258bf4d7-7e46-4d3b-ac36-3064fd91bb9e",
+      "name": "POST /api/imaging/mockup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2340,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst wrap = (title, body) => `<div style=\"font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111\"><h2 style=\"margin:0 0 16px\">${esc(title)}</h2>${body}<p style=\"margin-top:32px;color:#888;font-size:12px\">Midnight Fusion &middot; orders@midnightfusion.co</p></div>`;\nconst S = $('Secrets').first().json;\nconst appUrl = String(S.appUrl || '').replace(/\\/+$/, '');\nconst lead = $('Pick logo URL').first().json;\nconst m = $input.first().json;\nif (!lead.email || !m.mockup_url) return [];\nconst quote = `${appUrl}/start?c=${encodeURIComponent(lead.customer_id)}&mockup=${encodeURIComponent(m.mockup_url)}`;\nconst body = `<p>Pulled your logo off ${esc(lead.website)} and put it on a shirt. No charge, no strings.</p><p><img src=\"${esc(m.mockup_url)}\" alt=\"mockup\" style=\"max-width:100%\"></p><p><a href=\"${quote}\">Get a quote in 60 seconds</a></p>`;\nreturn [{ json: { email: { to: lead.email, subject: 'Your logo on a shirt', html: wrap('Your logo on a shirt', body), text: `Your logo on a shirt: ${m.mockup_url}\\nQuote: ${quote}` }, mockup_url: m.mockup_url, lead } }];\n"
+      },
+      "id": "b1b519e1-3200-4b93-aaa6-8d73488a2027",
+      "name": "Mockup email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Secrets').first().json.resendKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ from: $('Secrets').first().json.from }, $json.email)) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "dcb7cd85-f8b0-41be-aa39-3200c3ebcedb",
+      "name": "Resend: mockup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst e = $('Mockup email').first().json;\ncalls.push({ path: '/api/webhooks/n8n', body: { kind: 'touch', customer_id: e.lead.customer_id, channel: 'email', payload: { campaign: 'logo-drop', mockup_url: e.mockup_url } } });\ncalls.push({ url: `${n8nUrl}/webhook/pressline/internal/follow-up`, body: { customer_id: e.lead.customer_id, email: e.lead.email, name: e.lead.name || null, mockup_url: e.mockup_url, campaign: 'logo-drop', png_url: $('POST /api/imaging/clean').first().json.png_url || null } });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "814e00fe-6912-4389-abcd-2512cfe3673e",
+      "name": "Sign: touch + follow-up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "ab1667f2-464b-4f82-aca8-1ce7830c022f",
+      "name": "POST touch + follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3380,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Secrets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secrets": {
+      "main": [
+        [
+          {
+            "node": "Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify": {
+      "main": [
+        [
+          {
+            "node": "Fetch website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch website": {
+      "main": [
+        [
+          {
+            "node": "Extract logo candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract logo candidates": {
+      "main": [
+        [
+          {
+            "node": "Pick logo URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick logo URL": {
+      "main": [
+        [
+          {
+            "node": "Sign: clean logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: clean logo": {
+      "main": [
+        [
+          {
+            "node": "POST /api/imaging/clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /api/imaging/clean": {
+      "main": [
+        [
+          {
+            "node": "Sign: mockup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: mockup": {
+      "main": [
+        [
+          {
+            "node": "POST /api/imaging/mockup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /api/imaging/mockup": {
+      "main": [
+        [
+          {
+            "node": "Mockup email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mockup email": {
+      "main": [
+        [
+          {
+            "node": "Resend: mockup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resend: mockup": {
+      "main": [
+        [
+          {
+            "node": "Sign: touch + follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: touch + follow-up": {
+      "main": [
+        [
+          {
+            "node": "POST touch + follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "versionId": "52525b1a-1a62-45e6-a55c-6c176a53fd90",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { json, parse, staffRoute } from "@/lib/api";
+import { json, staffOrSignedRoute } from "@/lib/api";
 import { db } from "@/lib/supabase/service";
 import { isOrderStatus } from "@/lib/orders/status";
 import { listOrders, logEvent, newProofToken } from "@/lib/orders/service";
@@ -13,13 +13,16 @@ const Body = z.object({
   store_id: z.string().uuid().optional().nullable(),
 });
 
-export const GET = staffRoute(undefined, async (req) => {
-  const status = new URL(req.url).searchParams.get("status");
-  return json({ orders: await listOrders({ status: isOrderStatus(status) ? status : undefined }) });
+export const GET = staffOrSignedRoute(undefined, async (req) => {
+  const p = new URL(req.url).searchParams;
+  const status = p.get("status"), customerId = p.get("customer_id");
+  let orders = await listOrders({ status: isOrderStatus(status) ? status : undefined });
+  if (customerId) orders = orders.filter((o) => o.customer_id === customerId);
+  return json({ orders });
 });
 
-export const POST = staffRoute(undefined, async (req, _ctx, staff) => {
-  const b = await parse(req, Body);
+export const POST = staffOrSignedRoute(undefined, async (_req, _ctx, staff, raw) => {
+  const b = Body.parse(raw ?? {});
   const { data: order, error } = await db().from("orders").insert({ customer_id: b.customer_id, due_date: b.due_date ?? null, rush: b.rush, store_id: b.store_id ?? null, proof_token: newProofToken(), status: "NEW" }).select("*").single();
   if (error) throw new Error(error.message);
   await db().from("order_lines").insert(b.lines.map((l) => ({ order_id: order.id, blank_id: l.blank_id ?? null, sizes: l.sizes as never, design_id: l.design_id ?? null, locations: l.locations, unit_price: l.unit_price ?? null })));

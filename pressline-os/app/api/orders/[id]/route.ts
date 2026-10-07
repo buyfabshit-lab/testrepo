@@ -1,9 +1,9 @@
-import { bad, json, params, staffRoute } from "@/lib/api";
+import { bad, json, params, staffOrSignedRoute } from "@/lib/api";
 import { db } from "@/lib/supabase/service";
 import { getOrder } from "@/lib/orders/service";
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
-export const GET = staffRoute<Ctx>(undefined, async (_req, ctx) => {
+export const GET = staffOrSignedRoute<Ctx>(undefined, async (_req, ctx) => {
   const { id } = await params(ctx);
   const order = await getOrder(id);
   if (!order) return bad("not found", 404);

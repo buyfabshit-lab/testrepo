@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bad, clientIp, json, parse, rateLimit, route } from "@/lib/api";
+import { bad, clientIp, json, officeSession, parse, rateLimit, route } from "@/lib/api";
 import { currentStaff } from "@/lib/auth/staff";
 import { chat } from "@/lib/outlaw";
 import { db } from "@/lib/supabase/service";
@@ -11,7 +11,7 @@ const Body = z.object({ message: z.string().trim().min(1).max(1000), history: z.
 export const POST = route(async (req) => {
   if (!rateLimit(`outlaw:${clientIp(req)}`, 30, 60_000)) return bad("slow down", 429);
   const b = await parse(req, Body);
-  const staff = await currentStaff();
+  const staff = (await currentStaff()) ?? (await officeSession());
   if (staff) {
     const r = await chat({ message: b.message, audience: "staff", history: b.history });
     return json({ text: r.text, tools_used: r.toolsUsed });

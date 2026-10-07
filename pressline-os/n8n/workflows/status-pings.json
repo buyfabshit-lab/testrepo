@@ -1,0 +1,579 @@
+{
+  "name": "status-pings",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pressline/status",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "164b2aa4-8c5b-4bed-aa5f-b8d242aaf750",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "b779c0a7-79f7-4703-acee-98fdc1634f3a"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c80d101f-aa04-4e66-a0c7-b553d979e23c",
+              "name": "secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "type": "string"
+            },
+            {
+              "id": "681d500a-8ed8-436c-a76f-2fe3f8d96616",
+              "name": "appUrl",
+              "value": "={{ $env.PRESSLINE_APP_URL || 'https://pressline.up.railway.app' }}",
+              "type": "string"
+            },
+            {
+              "id": "f71dfb88-61d4-49e2-a227-b8211c7e2a73",
+              "name": "n8nUrl",
+              "value": "={{ $env.N8N_PUBLIC_URL || 'https://deathcorps187.app.n8n.cloud' }}",
+              "type": "string"
+            },
+            {
+              "id": "e2afa495-8a10-405b-a79c-da750616c149",
+              "name": "resendKey",
+              "value": "={{ $env.RESEND_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "8f9d5495-64c7-439d-afb3-4486d4780ff6",
+              "name": "hedraKey",
+              "value": "={{ $env.HEDRA_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "9f62b528-15fd-4fc5-a093-f8eb5c3fb985",
+              "name": "justinEmail",
+              "value": "={{ $env.JUSTIN_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "e74bb516-76c6-4c2b-a597-3d3d73e05e36",
+              "name": "jeffEmail",
+              "value": "={{ $env.JEFF_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "f8b391c6-5555-46fd-a3c1-88248f4e1f05",
+              "name": "dannyEmail",
+              "value": "={{ $env.DANNY_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "3c58b6f4-7670-43ef-a624-04b83c7eb913",
+              "name": "reviewUrl",
+              "value": "={{ $env.REVIEW_URL || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "09227fe1-19d3-44e8-a2cb-4b08b70bede0",
+              "name": "from",
+              "value": "Midnight Fusion <orders@midnightfusion.co>",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "id": "478feab3-9cd8-468f-a2ec-a105477ec8a9",
+      "name": "Secrets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ],
+      "notes": "Credential-free fallback: if $env is disabled on this n8n, paste literal values here. appUrl = PRESSLINE_APP_URL."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify X-Pressline-Signature (same scheme as lib/n8n/sign.ts). Throws on bad/stale.\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst hook = $('Webhook').first();\nconst headers = hook.json.headers || {};\nconst header = headers['x-pressline-signature'] || headers['X-Pressline-Signature'];\nif (!header) throw new Error('unsigned request: missing x-pressline-signature');\n// Raw body: Webhook node has \"Raw Body\" on, so the exact bytes are in binary.data.\nlet raw = null;\nif (hook.binary && hook.binary.data) {\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { /* helper unavailable */ }\n  if (raw === null) {\n    const d = hook.binary.data.data || '';\n    if (/^[A-Za-z0-9+/]+=*$/.test(d)) raw = Buffer.from(d, 'base64').toString('utf8');\n  }\n}\nif (raw === null) raw = JSON.stringify(hook.json.body ?? {}); // last resort: app sends compact JSON.stringify\nconst parts = Object.fromEntries(String(header).split(',').map((kv) => kv.split('=')));\nconst t = Number(parts.t); const v1 = parts.v1 || '';\nconst now = Math.floor(Date.now() / 1000);\nif (!Number.isFinite(t) || Math.abs(now - t) > 300) throw new Error('stale signature (older than 5 minutes)');\nconst expected = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\nconst a = Buffer.from(expected, 'hex'); const b = Buffer.from(v1, 'hex');\nif (a.length === 0 || a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('bad signature');\nlet payload; try { payload = JSON.parse(raw); } catch (e) { payload = hook.json.body ?? {}; }\nreturn [{ json: payload }];\n"
+      },
+      "id": "ada17636-7225-492c-abf6-5538fd0e62ee",
+      "name": "Verify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "notes": "Throws (stops the run) when the signature is missing, wrong, or older than 5 minutes."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Exact copy from lib/outlaw/index.ts pingFor(). Only payload values; nothing invented.\nconst p = $input.first().json;\nconst n = p.number; const status = String(p.to || '');\nconst lines = {\n  PAID: [['jeff', `${n} is paid. It's real now.`], ['justin', `${n} paid.`]],\n  BLANKS_ORDERED: [['jeff', `Blanks are on the way for ${n}. Watch the dock.`]],\n  ART_READY: [['danny', `Art for ${n} is named and in 01 TO GANG SHEET. It rides tonight.`]],\n  ON_GANG_SHEET: [['danny', `${n} is on tonight's sheet.`], ['jeff', `${n} went to Danny.`]],\n  PRINTED: [['jeff', `Danny's done with ${n}. It's yours — pack it.`]],\n  PACKED: [['jeff', `${n} packed under my watch. Label next.`]],\n  SHIPPED: [['customer', `Your Midnight Fusion order #${n} is on its way.`]],\n  HOLD: [['justin', `${n} is on HOLD. Needs your eyes.`]],\n};\nconst audience = Array.isArray(p.audience) ? p.audience : null;\nreturn (lines[status] || [])\n  .filter(([to]) => !audience || audience.includes(to))\n  .map(([to, text]) => ({ json: { to, text, order_id: p.order_id, number: n, customer_id: p.customer_id, status, from: p.from, reason: p.reason || null, actor: p.actor || null } }));\n"
+      },
+      "id": "ae537ca9-0add-4e13-aa1a-20a581904c69",
+      "name": "Build pings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "4e49728c-0fd8-46ca-a5be-80688206e421",
+              "leftValue": "={{ $json.to }}",
+              "rightValue": "customer",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0de2c6bb-90c2-46f4-aece-463cb1f56b52",
+      "name": "Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nfor (const it of items) calls.push({ method: 'GET', path: `/api/orders/${encodeURIComponent(it.json.order_id)}`, meta: it.json });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "149ecf2f-e1fa-436b-aaca-97c5d04f9017",
+      "name": "Sign: GET order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "01701c8f-b5f1-4e54-ab8c-688edb4fe96b",
+      "name": "GET /api/orders/:id",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst wrap = (title, body) => `<div style=\"font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111\"><h2 style=\"margin:0 0 16px\">${esc(title)}</h2>${body}<p style=\"margin-top:32px;color:#888;font-size:12px\">Midnight Fusion &middot; orders@midnightfusion.co</p></div>`;\nconst S = $('Secrets').first().json;\nconst appUrl = String(S.appUrl || '').replace(/\\/+$/, '');\nreturn $input.all().map((it, i) => {\n  const order = it.json.order || {};\n  const customer = order.customer || {};\n  const ping = $('Sign: GET order').all()[i].json.meta;\n  if (!customer.email) throw new Error(`order ${ping.order_id}: no customer email`);\n  const body = `<p>${esc(ping.text)}</p>` + (ping.reason ? `<p>${esc(ping.reason)}</p>` : '') + (order.tracking_url ? `<p><a href=\"${esc(order.tracking_url)}\">Track it</a></p>` : '');\n  return { json: { email: { to: customer.email, subject: `Midnight Fusion order #${ping.number}`, html: wrap(`Order #${ping.number}`, body), text: ping.text } } };\n});\n"
+      },
+      "id": "9bbdc0ac-89cb-48a3-a5a2-67b73f1c27db",
+      "name": "Customer email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Secrets').first().json.resendKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ from: $('Secrets').first().json.from }, $json.email)) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "05c36681-f338-41d5-aa12-c7b727cd3ee8",
+      "name": "Resend: customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2080,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst wrap = (title, body) => `<div style=\"font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111\"><h2 style=\"margin:0 0 16px\">${esc(title)}</h2>${body}<p style=\"margin-top:32px;color:#888;font-size:12px\">Midnight Fusion &middot; orders@midnightfusion.co</p></div>`;\nconst S = $('Secrets').first().json;\nconst appUrl = String(S.appUrl || '').replace(/\\/+$/, '');\nconst addr = { jeff: S.jeffEmail, danny: S.dannyEmail, justin: S.justinEmail };\nreturn $input.all().map((it) => {\n  const p = it.json;\n  const to = addr[p.to] || S.justinEmail;\n  if (!to) throw new Error(`no email configured for ${p.to} (JEFF_EMAIL / DANNY_EMAIL / JUSTIN_EMAIL)`);\n  const body = `<p>${esc(p.text)}</p><p>${esc(p.from)} &rarr; ${esc(p.status)}` + (p.reason ? ` &middot; ${esc(p.reason)}` : '') + `</p><p><a href=\"${appUrl}/app/orders/${esc(p.order_id)}\">Open ${esc(p.number)}</a></p>`;\n  return { json: { email: { to, subject: `${p.number}: ${p.status}`, html: wrap(`Outlaw: ${p.number}`, body), text: p.text } } };\n});\n"
+      },
+      "id": "5dadebc3-7f57-4bde-a929-5d094f9ad422",
+      "name": "Staff email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Secrets').first().json.resendKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ from: $('Secrets').first().json.from }, $json.email)) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "92f6c4aa-c03c-44f2-a7f9-b83bc11adf2d",
+      "name": "Resend: staff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        220
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\n// The app enforces SMS_ENABLED + consent + opt-out. n8n never talks to Twilio.\nfor (const it of items) calls.push({ method: 'POST', path: '/api/sms/send', body: { customer_id: it.json.customer_id, to_role: it.json.to, order_id: it.json.order_id, body: it.json.text }, meta: { to: it.json.to } });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "1c3dce8b-d65e-42fa-a76b-83c16b981724",
+      "name": "Sign: SMS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "489f0a65-d820-4933-a5dc-5f17810471cd",
+      "name": "POST /api/sms/send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        440
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "200eb45b-c9d3-4ed8-a87b-08a7cdeac469",
+              "leftValue": "={{ $json.to }}",
+              "rightValue": "DONE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "09df9265-1f61-48ab-ad45-beb83c71e5a8",
+      "name": "Delivered?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        780,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst p = items[0].json;\nconst body = { order_id: p.order_id, number: p.number, customer_id: p.customer_id, delivered_at: new Date().toISOString() };\ncalls.push({ url: `${n8nUrl}/webhook/pressline/internal/review-referral`, body });\ncalls.push({ url: `${n8nUrl}/webhook/pressline/internal/reorder-radar`, body });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "44f653cb-88ed-4d24-adc4-4044a19512de",
+      "name": "Sign: delivered fan-out",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "effa2c41-19fd-44ca-a3c2-38f41153ec5d",
+      "name": "POST internal webhooks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        660
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Secrets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secrets": {
+      "main": [
+        [
+          {
+            "node": "Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify": {
+      "main": [
+        [
+          {
+            "node": "Build pings",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delivered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build pings": {
+      "main": [
+        [
+          {
+            "node": "Customer?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sign: SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer?": {
+      "main": [
+        [
+          {
+            "node": "Sign: GET order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Staff email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: GET order": {
+      "main": [
+        [
+          {
+            "node": "GET /api/orders/:id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /api/orders/:id": {
+      "main": [
+        [
+          {
+            "node": "Customer email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer email": {
+      "main": [
+        [
+          {
+            "node": "Resend: customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Staff email": {
+      "main": [
+        [
+          {
+            "node": "Resend: staff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: SMS": {
+      "main": [
+        [
+          {
+            "node": "POST /api/sms/send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivered?": {
+      "main": [
+        [
+          {
+            "node": "Sign: delivered fan-out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: delivered fan-out": {
+      "main": [
+        [
+          {
+            "node": "POST internal webhooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "versionId": "326a64af-6afb-41f0-a119-7d67290b8353",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

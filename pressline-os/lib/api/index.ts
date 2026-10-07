@@ -1,7 +1,10 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { AuthError, currentStaff, requireStaff, type StaffRole, type StaffSession } from "@/lib/auth/staff";
+import { OFFICE_COOKIE, verifyOfficeToken } from "@/lib/auth/pin";
+import { SIGNATURE_HEADER, verify } from "@/lib/n8n/sign";
 
 export type Handler<Ctx> = (req: Request, ctx: Ctx) => Promise<Response> | Response;
 
@@ -27,11 +30,36 @@ export function route<Ctx>(handler: Handler<Ctx>): Handler<Ctx> {
   };
 }
 
-/** Staff-only route. */
+/** The Business Office tablet: a valid PIN cookie acts as the owner (spec §9 — approvals from the office). */
+export async function officeSession(): Promise<StaffSession | null> {
+  const jar = await cookies();
+  const tok = jar.get(OFFICE_COOKIE)?.value;
+  return verifyOfficeToken(tok) ? { userId: "office-tablet", email: null, name: "Business Office", role: "owner" } : null;
+}
+
+/** Staff-only route. The office PIN cookie also passes (as owner). */
 export function staffRoute<Ctx>(roles: StaffRole[] | undefined, handler: (req: Request, ctx: Ctx, staff: StaffSession) => Promise<Response> | Response): Handler<Ctx> {
   return route(async (req, ctx) => {
-    const staff = await requireStaff(roles);
+    const office = await officeSession();
+    const staff = office ?? (await requireStaff(roles));
     return handler(req, ctx, staff);
+  });
+}
+
+/**
+ * Staff OR n8n-signed. Reads the raw body once (so the signature covers it) and hands it back parsed.
+ * n8n-signed calls act as the "n8n" actor with owner-level access.
+ */
+export function staffOrSignedRoute<Ctx>(roles: StaffRole[] | undefined, handler: (req: Request, ctx: Ctx, staff: StaffSession, body: unknown) => Promise<Response> | Response): Handler<Ctx> {
+  return route(async (req, ctx) => {
+    const raw = await req.text();
+    const body = raw ? (() => { try { return JSON.parse(raw) as unknown; } catch { return null; } })() : {};
+    if (verify(raw, req.headers.get(SIGNATURE_HEADER))) {
+      return handler(req, ctx, { userId: "n8n", email: null, name: "n8n", role: "owner" }, body);
+    }
+    const office = await officeSession();
+    const staff = office ?? (await requireStaff(roles));
+    return handler(req, ctx, staff, body);
   });
 }
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { json, parse, staffRoute } from "@/lib/api";
+import { json, staffOrSignedRoute, staffRoute } from "@/lib/api";
 import { db } from "@/lib/supabase/service";
 import { priceQuote, sumSizes, type PriceRule } from "@/lib/pricing";
 import { logEvent } from "@/lib/orders/service";
@@ -40,8 +40,8 @@ export const GET = staffRoute(undefined, async () => {
   return json({ quotes: data });
 });
 
-export const POST = staffRoute(undefined, async (req, _ctx, staff) => {
-  const b = await parse(req, Body);
+export const POST = staffOrSignedRoute(undefined, async (_req, _ctx, staff, raw) => {
+  const b = Body.parse(raw ?? {});
   const priced = await priceLines(b.lines, b.rush);
   if (b.dry_run) return json({ quote: { lines: priced.lines, subtotal: priced.subtotal, total: priced.total } });
   const { data, error } = await db().from("quotes").insert({ customer_id: b.customer_id, lines: priced.lines as never, subtotal: priced.subtotal, total: priced.total, status: "draft" }).select("*").single();

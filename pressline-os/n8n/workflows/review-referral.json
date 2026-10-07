@@ -1,0 +1,469 @@
+{
+  "name": "review-referral",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pressline/internal/review-referral",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "4b0d0a87-ce7a-47c3-a564-0a027a6e1b74",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "886925c3-76ba-4033-a8fa-26f7d50baef6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b0cb63da-4c10-403b-a66d-4e57e96921f4",
+              "name": "secret",
+              "value": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "type": "string"
+            },
+            {
+              "id": "f222a318-e5fc-4ab3-a129-bf9e68aa2f46",
+              "name": "appUrl",
+              "value": "={{ $env.PRESSLINE_APP_URL || 'https://pressline.up.railway.app' }}",
+              "type": "string"
+            },
+            {
+              "id": "1ba072c0-c50d-42d0-ace4-3c76d69941c7",
+              "name": "n8nUrl",
+              "value": "={{ $env.N8N_PUBLIC_URL || 'https://deathcorps187.app.n8n.cloud' }}",
+              "type": "string"
+            },
+            {
+              "id": "a4f2ad62-965d-4e13-ad85-66fd4a8f6a05",
+              "name": "resendKey",
+              "value": "={{ $env.RESEND_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "0b25ae7a-21a9-4adf-a1db-f52f2d51e9af",
+              "name": "hedraKey",
+              "value": "={{ $env.HEDRA_API_KEY }}",
+              "type": "string"
+            },
+            {
+              "id": "69dd6460-049a-43a6-a5e9-6829574c3a56",
+              "name": "justinEmail",
+              "value": "={{ $env.JUSTIN_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "7d4243bf-778b-43d6-ade1-bbe58a756471",
+              "name": "jeffEmail",
+              "value": "={{ $env.JEFF_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "6b83af9e-3c21-4df0-a7c1-07a34cc1d56c",
+              "name": "dannyEmail",
+              "value": "={{ $env.DANNY_EMAIL }}",
+              "type": "string"
+            },
+            {
+              "id": "409601ab-abcf-4b20-a696-f5ab4eecd68b",
+              "name": "reviewUrl",
+              "value": "={{ $env.REVIEW_URL || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "0d7e2a6d-0fdf-4a4d-ac01-bde5c8d84f34",
+              "name": "from",
+              "value": "Midnight Fusion <orders@midnightfusion.co>",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "id": "61af9fd1-572b-43d5-a23a-0780292f6f08",
+      "name": "Secrets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ],
+      "notes": "Credential-free fallback: if $env is disabled on this n8n, paste literal values here. appUrl = PRESSLINE_APP_URL."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify X-Pressline-Signature (same scheme as lib/n8n/sign.ts). Throws on bad/stale.\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst hook = $('Webhook').first();\nconst headers = hook.json.headers || {};\nconst header = headers['x-pressline-signature'] || headers['X-Pressline-Signature'];\nif (!header) throw new Error('unsigned request: missing x-pressline-signature');\n// Raw body: Webhook node has \"Raw Body\" on, so the exact bytes are in binary.data.\nlet raw = null;\nif (hook.binary && hook.binary.data) {\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { /* helper unavailable */ }\n  if (raw === null) {\n    const d = hook.binary.data.data || '';\n    if (/^[A-Za-z0-9+/]+=*$/.test(d)) raw = Buffer.from(d, 'base64').toString('utf8');\n  }\n}\nif (raw === null) raw = JSON.stringify(hook.json.body ?? {}); // last resort: app sends compact JSON.stringify\nconst parts = Object.fromEntries(String(header).split(',').map((kv) => kv.split('=')));\nconst t = Number(parts.t); const v1 = parts.v1 || '';\nconst now = Math.floor(Date.now() / 1000);\nif (!Number.isFinite(t) || Math.abs(now - t) > 300) throw new Error('stale signature (older than 5 minutes)');\nconst expected = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\nconst a = Buffer.from(expected, 'hex'); const b = Buffer.from(v1, 'hex');\nif (a.length === 0 || a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('bad signature');\nlet payload; try { payload = JSON.parse(raw); } catch (e) { payload = hook.json.body ?? {}; }\nreturn [{ json: payload }];\n"
+      },
+      "id": "3b1ab66b-0bfa-42e8-ad93-fc57e036e2e8",
+      "name": "Verify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "notes": "Throws (stops the run) when the signature is missing, wrong, or older than 5 minutes."
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 24,
+        "unit": "hours"
+      },
+      "id": "97fb5336-6f59-429e-a790-6ebe794fcdee",
+      "name": "Wait: 24h",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        0
+      ],
+      "webhookId": "2fb10205-fa95-488d-a6aa-babe15ff9180"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst p = $('Verify').first().json;\ncalls.push({ method: 'GET', path: `/api/orders/${encodeURIComponent(p.order_id)}` });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "34461d0c-056c-49dc-a102-5d9c7c2f2bf8",
+      "name": "Sign: GET order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "48b37c76-3571-40c1-af77-0fa29acffbd3",
+      "name": "GET /api/orders/:id",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst wrap = (title, body) => `<div style=\"font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111\"><h2 style=\"margin:0 0 16px\">${esc(title)}</h2>${body}<p style=\"margin-top:32px;color:#888;font-size:12px\">Midnight Fusion &middot; orders@midnightfusion.co</p></div>`;\nconst S = $('Secrets').first().json;\nconst appUrl = String(S.appUrl || '').replace(/\\/+$/, '');\nconst p = $('Verify').first().json;\nconst customer = ($input.first().json.order || {}).customer || {};\nif (!customer.email) return [];\nconst review = S.reviewUrl || `${appUrl}/review?o=${encodeURIComponent(p.order_id)}`;\nconst body = `<p>Order #${esc(p.number)} landed. If it's right, a review helps the next person find us. If it's wrong, reply and we fix it.</p><p><a href=\"${esc(review)}\">Leave a review</a></p>`;\nreturn [{ json: { email: { to: customer.email, subject: `How did #${p.number} turn out?`, html: wrap(`Order #${p.number}`, body), text: `Review: ${review}` }, customer_email: customer.email } }];\n"
+      },
+      "id": "7b216495-912b-4831-a285-5a8c3631e5ae",
+      "name": "Review email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Secrets').first().json.resendKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ from: $('Secrets').first().json.from }, $json.email)) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "831bb9fc-3d4e-4845-aeee-5fdd418ddbab",
+      "name": "Resend: review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1820,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 3,
+        "unit": "days"
+      },
+      "id": "0dffcfe4-4f80-483c-a3ae-008a81199c51",
+      "name": "Wait: 3 days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2080,
+        0
+      ],
+      "webhookId": "d7aa755f-4f5d-4ff9-a7ee-ed517e5851ba"
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst wrap = (title, body) => `<div style=\"font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111\"><h2 style=\"margin:0 0 16px\">${esc(title)}</h2>${body}<p style=\"margin-top:32px;color:#888;font-size:12px\">Midnight Fusion &middot; orders@midnightfusion.co</p></div>`;\nconst S = $('Secrets').first().json;\nconst appUrl = String(S.appUrl || '').replace(/\\/+$/, '');\nconst p = $('Verify').first().json;\nconst to = $('Review email').first().json.customer_email;\nconst codeStr = `MF-${p.number}`;\nconst url = `${appUrl}/start?ref=${encodeURIComponent(codeStr)}`;\nconst body = `<p>Your referral code is <strong>${esc(codeStr)}</strong>. Anyone who orders with it gets 10% off their first run, and you get 10% off your next one.</p><p><a href=\"${url}\">${esc(url)}</a></p>`;\nreturn [{ json: { email: { to, subject: `Your code: ${codeStr}`, html: wrap('Pass it on', body), text: `Referral code ${codeStr}: ${url}` }, code: codeStr } }];\n"
+      },
+      "id": "909ebcc1-e708-410d-a400-c0a353f91b14",
+      "name": "Referral email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Secrets').first().json.resendKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.assign({ from: $('Secrets').first().json.from }, $json.email)) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b1e82377-ee6d-449d-a9dd-8446a4cf754e",
+      "name": "Resend: referral",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2600,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign outbound calls to the app: X-Pressline-Signature: t=<unix>,v1=<hmac sha256 hex of \"<t>.<rawBody>\">\nconst crypto = require('crypto');\nconst S = $('Secrets').first().json;\nlet secret; try { secret = $env.N8N_WEBHOOK_SECRET; } catch (e) { /* $env disabled */ }\nif (!secret) secret = S.secret;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET missing: set it in n8n env or in the Secrets node');\nconst appUrl = String(S.appUrl || 'https://pressline.up.railway.app').replace(/\\/+$/, '');\nconst n8nUrl = String(S.n8nUrl || 'https://deathcorps187.app.n8n.cloud').replace(/\\/+$/, '');\nconst items = $input.all();\nconst calls = [];\nconst p = $('Verify').first().json;\ncalls.push({ path: '/api/webhooks/n8n', body: { kind: 'referral_code', customer_id: p.customer_id, order_id: p.order_id, code: $('Referral email').first().json.code } });\ncalls.push({ path: '/api/webhooks/n8n', body: { kind: 'touch', customer_id: p.customer_id, channel: 'email', payload: { campaign: 'review-referral', order_id: p.order_id } } });\nreturn calls.filter(Boolean).map((c) => {\n  const method = String(c.method || 'POST').toUpperCase();\n  const raw = method === 'GET' ? '' : JSON.stringify(c.body ?? {});\n  const t = Math.floor(Date.now() / 1000);\n  const mac = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\n  const url = c.url || (appUrl + c.path);\n  return { json: { url, method, raw, signature: `t=${t},v1=${mac}`, meta: c.meta || {} } };\n});\n"
+      },
+      "id": "2d59e88f-719a-4961-a224-182b6b2a5625",
+      "name": "Touch: sign touch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pressline-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw }}"
+      },
+      "id": "7cd1ed8b-824b-4b01-a19f-201ad549634c",
+      "name": "Touch: POST /api/webhooks/n8n",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Secrets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secrets": {
+      "main": [
+        [
+          {
+            "node": "Verify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify": {
+      "main": [
+        [
+          {
+            "node": "Wait: 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: 24h": {
+      "main": [
+        [
+          {
+            "node": "Sign: GET order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign: GET order": {
+      "main": [
+        [
+          {
+            "node": "GET /api/orders/:id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /api/orders/:id": {
+      "main": [
+        [
+          {
+            "node": "Review email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review email": {
+      "main": [
+        [
+          {
+            "node": "Resend: review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resend: review": {
+      "main": [
+        [
+          {
+            "node": "Wait: 3 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: 3 days": {
+      "main": [
+        [
+          {
+            "node": "Referral email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Referral email": {
+      "main": [
+        [
+          {
+            "node": "Resend: referral",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Touch: sign touch": {
+      "main": [
+        [
+          {
+            "node": "Touch: POST /api/webhooks/n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resend: referral": {
+      "main": [
+        [
+          {
+            "node": "Touch: sign touch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Los_Angeles",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "versionId": "57c5672f-9d33-4d23-a1ed-2e4faf8bdf58",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
