@@ -22,7 +22,8 @@ Money gates: anything that places a PO, charges live, or texts requires an expli
 | POST | `/api/designs` | staff or customer email | `{ customer_id?, order_id?, studio_json, print_png_base64, width_in, method, locations, brand?, blank_id?, vault_asset_ids? }` → `{ design, file_name, dpi_warning? }` (300 DPI file → Storage + Drive) |
 | POST | `/api/quotes/instant` · `/api/quotes/instant/send` | none (rate-limited) | studio "Make it real": `{ qty, blank_style, blank_color, method }` → `{ total, unit, setup }`; send adds `{ email }` → saves draft quote + emails it |
 | GET | `/api/vault` | anyone (studio: license-filtered, no MCG) / staff / **n8n** | `?q=&brand=&tags=a,b&license=` → `{ total, assets[] }` |
-| GET | `/api/blanks` | staff | `?supplier=ss&style=5000&color=` → live S&S (or cached rows) |
+| POST | `/api/blanks/sanmar-refresh` | staff(owner|production) | → `{ upserted }` (pulls the SanMar EPDD file) |
+| GET | `/api/blanks` | anyone (no costs to anon) | `?supplier=ss&style=5000&color=` → live S&S (or cached rows) |
 | POST | `/api/po` | staff | `{ order_id, supplier:"ss", lines:[{identifier, qty}], ship_to }` → `{ po }` status pending_approval |
 | POST | `/api/po/:id/approve` | staff(owner) | → places with S&S only if LIVE_MONEY=true, else `{ dry_run: true }` |
 | POST | `/api/gang-runs/build` | **n8n** | `{ run_date?, max_height_in?, dry_run? }` → `RunResult` |
