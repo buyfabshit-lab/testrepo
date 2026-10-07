@@ -5,8 +5,9 @@
 export const PX_PER_IN = 24;
 export const PRINT_DPI = 300;
 
-export type BlankKey = "tee" | "hat";
-export type Location = "front" | "back" | "left_chest";
+export type BlankKey = "tee" | "hat" | "sticker";
+export type Location = "front" | "back" | "left_chest" | "sticker";
+export type PrintMethod = "dtf" | "uv";
 
 export interface PrintArea { w: number; h: number; cx: number; cy: number } // inches + centre in logical px
 export interface BlankDef {
@@ -15,6 +16,9 @@ export interface BlankDef {
   style: string;      // S&S style number used for /api/blanks + designs.blank_style
   brand: string;
   canvas: { w: number; h: number };
+  method: PrintMethod;
+  /** true → never call /api/blanks; always draw the studio background */
+  noPhoto?: boolean;
   sides: Location[];
   areas: Record<Location, PrintArea | undefined>;
   /** Which photo a location uses */
@@ -24,28 +28,39 @@ export interface BlankDef {
 export const BLANKS: Record<BlankKey, BlankDef> = {
   tee: {
     key: "tee", label: "Tee · Gildan 5000", style: "5000", brand: "Gildan",
-    canvas: { w: 600, h: 700 },
+    canvas: { w: 600, h: 700 }, method: "dtf",
     sides: ["front", "back", "left_chest"],
     areas: {
       front:      { w: 12, h: 16, cx: 300, cy: 380 },
       back:       { w: 12, h: 16, cx: 300, cy: 360 },
       left_chest: { w: 4,  h: 4,  cx: 372, cy: 250 },
+      sticker: undefined,
     },
     photoFor: (loc) => (loc === "back" ? "back" : "front"),
   },
   hat: {
     key: "hat", label: "Hat · Richardson 112", style: "112", brand: "Richardson",
-    canvas: { w: 600, h: 440 },
+    canvas: { w: 600, h: 440 }, method: "dtf",
     sides: ["front"],
     areas: {
       front: { w: 4.5, h: 2.25, cx: 300, cy: 215 },
-      back: undefined, left_chest: undefined,
+      back: undefined, left_chest: undefined, sticker: undefined,
+    },
+    photoFor: () => "front",
+  },
+  sticker: {
+    key: "sticker", label: "UV sticker", style: "UVSTICKER", brand: "MF",
+    canvas: { w: 520, h: 520 }, method: "uv", noPhoto: true,
+    sides: ["sticker"],
+    areas: {
+      sticker: { w: 4, h: 4, cx: 260, cy: 260 },
+      front: undefined, back: undefined, left_chest: undefined,
     },
     photoFor: () => "front",
   },
 };
 
-export const LOCATION_LABELS: Record<Location, string> = { front: "Front", back: "Back", left_chest: "Left chest" };
+export const LOCATION_LABELS: Record<Location, string> = { front: "Front", back: "Back", left_chest: "Left chest", sticker: "Sticker" };
 
 /** Print-area rectangle in logical px. */
 export function areaRect(blank: BlankKey, loc: Location) {
@@ -85,6 +100,16 @@ function shade(hex: string, amt: number): string {
 /** Flat silhouettes so the studio works with no API. Tinted by garment colour. */
 export function fallbackSvg(blank: BlankKey, side: "front" | "back", hex: string): string {
   const dark = shade(hex, -28), light = shade(hex, 18);
+  if (blank === "sticker") {
+    // Dark matte sticker sheet: subtle dot grid, a die-cut outline around the 4×4 area.
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520" width="520" height="520">
+      <defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="#2a2823"/></pattern></defs>
+      <rect width="520" height="520" fill="#171613"/>
+      <rect width="520" height="520" fill="url(#dots)"/>
+      <rect x="160" y="160" width="200" height="200" rx="18" fill="#1b1a16" stroke="#3a3326" stroke-width="2"/>
+      <text x="260" y="498" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#4a4538" letter-spacing="3">UV DTF · DIE CUT · 4 × 4 IN</text>
+    </svg>`;
+  }
   if (blank === "tee") {
     const collar = side === "front"
       ? `<path d="M250 70 q50 60 100 0" fill="none" stroke="${dark}" stroke-width="10"/>`

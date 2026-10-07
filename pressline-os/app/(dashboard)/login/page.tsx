@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {reason === "env" ? (
         <p className="mt-4 border border-mf-blood p-3 text-sm text-mf-cream">Supabase env vars are missing on the server. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.</p>
       ) : null}
-      <LoginForm next={next} />
+      <LoginForm next={next} reason={reason ?? null} />
     </main>
   );
 }

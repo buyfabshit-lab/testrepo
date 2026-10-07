@@ -21,7 +21,7 @@ type PlObject = FabricObject & {
 };
 type VaultAsset = { id: string; title: string | null; brand: string | null; tags: string[] | null; thumb: string | null; url?: string | null; dpi?: number | null };
 type Saved = { design_id: string | null; file_name: string | null; dpi_warning: string | null };
-type Quote = { raw: Record<string, unknown>; total: number | null; unit: number | null; id: string | null };
+type Quote = { raw: Record<string, unknown>; total: number | null; unit: number | null; setup: number | null; id: string | null };
 type SelInfo = { count: number; kind: PlObject["plKind"] | null; dpi: number | null; locked: boolean; arc: number; isText: boolean };
 
 /** Custom props kept in studio_json so a saved design re-opens exactly as left. */
@@ -34,7 +34,10 @@ const isSystem = (o: FabricObject) => Boolean((o as PlObject).plRole);
 
 /* ---------------------------------------------------------------- component */
 
-export function Studio() {
+export type StudioMode = "studio" | "arcade";
+
+export function Studio({ mode = "studio" }: { mode?: StudioMode }) {
+  const arcade = mode === "arcade";
   const hostEl = useRef<HTMLDivElement>(null);
   const stageEl = useRef<HTMLDivElement>(null);
   const fcRef = useRef<Canvas | null>(null);
@@ -46,7 +49,7 @@ export function Studio() {
   const loadToken = useRef(0);
   const photoCache = useRef(new Map<string, { front: string | null; back: string | null }>());
 
-  const [blank, setBlank] = useState<BlankKey>("tee");
+  const [blank, setBlank] = useState<BlankKey>("tee"); // arcade: black tee, front
   const [location, setLocation] = useState<Location>("front");
   const [colorIdx, setColorIdx] = useState(0);
   const [camo, setCamo] = useState<CamoKind | null>(null);
@@ -69,7 +72,7 @@ export function Studio() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteSent, setQuoteSent] = useState(false);
 
-  const color = COLORS[colorIdx];
+  const color = COLORS[arcade ? 0 : colorIdx]; // arcade: swatch locked to black
   const def = BLANKS[blank];
   const area = areaRect(blank, location);
 
@@ -309,6 +312,7 @@ export function Studio() {
     const key = `${def.style}:${color.ss}`;
 
     async function photos(): Promise<{ front: string | null; back: string | null }> {
+      if (def.noPhoto) return { front: null, back: null };
       const hit = photoCache.current.get(key);
       if (hit) return hit;
       let out = { front: null as string | null, back: null as string | null };
@@ -358,7 +362,7 @@ export function Studio() {
     fitToContainer();
     fc.requestRenderAll();
     if (!undoRef.current.length) snapshot();
-  }, [blank, location, colorIdx, color, def, drawGuide, reclipAll, fitToContainer, snapshot]);
+  }, [blank, location, color, def, drawGuide, reclipAll, fitToContainer, snapshot]);
 
   useEffect(() => { syncWaterline(); }, [syncWaterline]);
 
@@ -621,7 +625,7 @@ export function Studio() {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
           customer_email: email, studio_json, print_png_base64,
-          width_in: area.inW, height_in: area.inH, method: "dtf", locations: [location], brand: null,
+          width_in: area.inW, height_in: area.inH, method: def.method, locations: [location], brand: null,
           blank_style: def.style, blank_color: color.ss, vault_asset_ids,
         }),
       });
@@ -640,14 +644,14 @@ export function Studio() {
     try {
       const r = await fetch("/api/quotes/instant", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ design_id: saved.design_id, qty, blank_style: def.style, blank_color: color.ss, method: "dtf" }),
+        body: JSON.stringify({ design_id: saved.design_id, qty, blank_style: def.style, blank_color: color.ss, method: def.method }),
       });
       const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
       if (!r.ok) throw new Error(typeof j.error === "string" ? j.error : String(r.status));
       const q = (j.quote && typeof j.quote === "object" ? j.quote : j) as Record<string, unknown>;
       const num = (v: unknown) => (typeof v === "number" ? v : typeof v === "string" && v !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
       const total = num(q.total);
-      setQuote({ raw: j, total, unit: num(q.unit) ?? (total != null && qty ? Math.round((total / qty) * 100) / 100 : null), id: typeof q.id === "string" ? q.id : null });
+      setQuote({ raw: j, total, unit: num(q.unit) ?? (total != null && qty ? Math.round((total / qty) * 100) / 100 : null), setup: num(q.setup), id: typeof q.id === "string" ? q.id : null });
     } catch (e) {
       flash(`Quote failed (${(e as Error).message}).`);
     } finally { setBusy(null); }
@@ -659,7 +663,7 @@ export function Studio() {
     try {
       const r = await fetch("/api/quotes/instant/send", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ quote_id: quote?.id ?? null, design_id: saved.design_id, email, qty, blank_style: def.style, blank_color: color.ss, method: "dtf" }),
+        body: JSON.stringify({ email, qty, blank_style: def.style, blank_color: color.ss, method: def.method, design_id: saved.design_id }),
       });
       if (!r.ok) throw new Error(String(r.status));
       setQuoteSent(true);
@@ -788,7 +792,7 @@ export function Studio() {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2 px-4 sm:px-0">
           {(Object.keys(BLANKS) as BlankKey[]).map((k) => (
-            <button key={k} className={chip(blank === k)} onClick={() => { setBlank(k); setLocation("front"); }}>{BLANKS[k].label}</button>
+            <button key={k} className={chip(blank === k)} onClick={() => { setBlank(k); setLocation(BLANKS[k].sides[0]); }}>{BLANKS[k].label}</button>
           ))}
           <span className="mx-1 h-5 w-px bg-mf-line" />
           {def.sides.map((l) => (
@@ -796,11 +800,14 @@ export function Studio() {
           ))}
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5 px-4 sm:px-0">
-          {COLORS.map((c, i) => (
-            <button key={c.name} title={c.name} onClick={() => setColorIdx(i)}
-              className={`h-7 w-7 rounded-full border-2 ${i === colorIdx ? "border-mf-gold" : "border-mf-line"}`} style={{ background: c.hex }} aria-label={c.name} />
-          ))}
-          <span className="ml-2 self-center text-[11px] uppercase tracking-widest text-mf-muted">{color.name} · {area.inW}×{area.inH} in</span>
+          {!def.noPhoto && (arcade ? [COLORS[0]] : COLORS).map((c) => {
+            const i = COLORS.indexOf(c);
+            return (
+              <button key={c.name} title={arcade ? "Arcade runs on black" : c.name} onClick={() => !arcade && setColorIdx(i)} disabled={arcade}
+                className={`h-7 w-7 rounded-full border-2 ${c === color ? "border-mf-gold" : "border-mf-line"} ${arcade ? "cursor-default" : ""}`} style={{ background: c.hex }} aria-label={c.name} />
+            );
+          })}
+          <span className="ml-2 self-center text-[11px] uppercase tracking-widest text-mf-muted">{def.noPhoto ? "UV DTF sticker" : color.name} · {area.inW}×{area.inH} in{arcade && !def.noPhoto ? " · locked to black" : ""}</span>
         </div>
 
         <div ref={stageEl} onDrop={onDrop} onDragOver={(e) => e.preventDefault()} className="relative mt-3 w-full overflow-hidden bg-mf-panel sm:border sm:border-mf-line">
@@ -854,8 +861,8 @@ export function Studio() {
               {quote && (
                 <div className="mt-3 flex flex-wrap items-end gap-4">
                   <div>
-                    <p className="text-[11px] uppercase tracking-widest text-mf-muted">Instant quote · {qty} × {def.label.split(" · ")[1]} {color.name} · DTF {LOCATION_LABELS[location].toLowerCase()}</p>
-                    <p className="font-display text-3xl text-mf-gold">{quote.total != null ? `$${quote.total.toFixed(2)}` : "Quote ready"}{quote.unit != null && <span className="ml-2 text-base text-mf-muted">(${quote.unit.toFixed(2)} ea)</span>}</p>
+                    <p className="text-[11px] uppercase tracking-widest text-mf-muted">Instant quote · {qty} × {def.label.split(" · ")[1] ?? def.label}{def.noPhoto ? "" : ` ${color.name}`} · {def.method.toUpperCase()} {LOCATION_LABELS[location].toLowerCase()}</p>
+                    <p className="font-display text-3xl text-mf-gold">{quote.total != null ? `$${quote.total.toFixed(2)}` : "Quote ready"}{quote.unit != null && <span className="ml-2 text-base text-mf-muted">(${quote.unit.toFixed(2)} ea{quote.setup ? ` + $${quote.setup.toFixed(2)} setup` : ""})</span>}</p>
                   </div>
                   <button className="btn" onClick={sendQuote} disabled={busy === "send" || quoteSent}>{quoteSent ? "Sent to " + email : busy === "send" ? "Sending…" : "Send me this quote"}</button>
                 </div>

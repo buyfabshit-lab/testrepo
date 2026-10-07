@@ -1,13 +1,18 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { currentStaff } from "@/lib/auth/staff";
+import { serverClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/board/Nav";
 import { OutlawChat } from "@/components/board/OutlawChat";
 import { signOut } from "./actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const staff = await currentStaff();
-  if (!staff) redirect("/login?next=/app");
+  if (!staff) {
+    // Signed in but not in pressline.staff → tell them, do not bounce in a loop.
+    const { data: { user } } = await (await serverClient()).auth.getUser();
+    redirect(user ? "/login?reason=notstaff" : "/login?next=/app");
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -51,7 +51,7 @@ export function ApproveQuote({ quoteId, total, status, customer, lines }: {
           <p className="mt-2 text-sm text-mf-muted">Proof link for the customer:</p>
           <a href={done.proof_url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm">{done.proof_url}</a>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <button type="button" className="btn justify-center" onClick={() => navigator.clipboard?.writeText(done.proof_url)}>Copy link</button>
+            <button type="button" className="btn justify-center" onClick={() => { void navigator.clipboard?.writeText(done.proof_url).catch(() => window.prompt("Copy the proof link", done.proof_url)); }}>Copy link</button>
             {done.orderId ? <Link href={`/app/orders/${done.orderId}`} className="btn btn-solid justify-center">Open order</Link> : <Link href="/app/board" className="btn btn-solid justify-center">Board</Link>}
           </div>
         </div>

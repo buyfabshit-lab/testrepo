@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { BOARD_LANES, STATUS_COLORS, STATUS_LABELS, type OrderStatus } from "@/lib/orders/status";
 import { browserClient } from "@/lib/supabase/browser";
 import type { OrderRow } from "@/lib/supabase/types";
@@ -19,6 +19,9 @@ export function Board({ initial }: { initial: BoardOrder[] }) {
   const [toast, setToast] = useState<ToastState>(null);
   const today = todayLA();
 
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
+
   // Server re-render (router.refresh) hands us fresh data.
   useEffect(() => { setOrders(initial); }, [initial]);
 
@@ -30,13 +33,8 @@ export function Board({ initial }: { initial: BoardOrder[] }) {
       .on("postgres_changes", { event: "*", schema: "pressline", table: "orders" }, (payload) => {
         if (payload.eventType === "UPDATE") {
           const row = payload.new as OrderRow;
-          setOrders((prev) => {
-            const idx = prev.findIndex((o) => o.id === row.id);
-            if (idx === -1) { router.refresh(); return prev; }
-            const next = prev.slice();
-            next[idx] = { ...next[idx], ...row };
-            return next;
-          });
+          if (!ordersRef.current.some((o) => o.id === row.id)) { router.refresh(); return; }
+          setOrders((prev) => prev.map((o) => (o.id === row.id ? { ...o, ...row } : o)));
         } else if (payload.eventType === "DELETE") {
           const id = (payload.old as Partial<OrderRow>).id;
           setOrders((prev) => prev.filter((o) => o.id !== id));
