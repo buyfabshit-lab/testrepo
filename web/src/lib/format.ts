@@ -113,7 +113,7 @@ export function timeInZone(iso: string, timeZone: string): string | null {
 }
 
 /**
- * True when the viewer is somewhere that shares DIME's wall clock. Compared by
+ * True when the viewer is somewhere that shares the streamer's wall clock. Compared by
  * actual offset rather than by zone name, so America/New_York and
  * America/Toronto correctly count as the same and we don't nag a Toronto fan
  * with a redundant second line.

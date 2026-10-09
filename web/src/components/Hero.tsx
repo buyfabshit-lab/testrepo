@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { countdownParts, embedUrl } from "../lib/format";
-import defaultAvatar from "../assets/dime.webp";
+import defaultAvatar from "../assets/rollin-free-tv.webp";
 import type { Settings } from "../lib/types";
 
 /** "twitch" reads wrong in a sentence; brand names are capitalised. */

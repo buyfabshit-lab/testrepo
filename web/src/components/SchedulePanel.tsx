@@ -29,7 +29,7 @@ export function SchedulePanel({
           const ends = start + (item.duration_min ?? 0) * 60_000;
           const running = now >= start && now < ends;
 
-          // Times render in the viewer's own zone. DIME's is shown alongside
+          // Times render in the viewer's own zone. The streamer's is shown alongside
           // only when it actually differs, so a New York fan isn't told the
           // same time twice.
           const sameClock = sharesClockWith(item.starts_at, zone);
@@ -51,7 +51,7 @@ export function SchedulePanel({
                 </p>
                 {dimeTime && (
                   <p className="mt-0.5 font-mono text-[10px] tabular-nums text-ash">
-                    {dimeTime} for {location ?? "DIME"}
+                    {dimeTime} for {location ?? "Rollin Free TV"}
                   </p>
                 )}
               </div>
@@ -89,7 +89,7 @@ export function SchedulePanel({
 
       <p className="mt-4 text-xs text-ash">
         Times shown in your timezone
-        {location ? `; DIME streams out of ${location}` : ""}.
+        {location ? `; Rollin Free TV streams out of ${location}` : ""}.
       </p>
     </>
   );

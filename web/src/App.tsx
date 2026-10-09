@@ -16,6 +16,7 @@ import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { Section } from "./components/Section";
 import { Ticker } from "./components/Ticker";
+import { Designs } from "./components/Designs";
 import { ChatPanel } from "./components/ChatPanel";
 import { PollCard } from "./components/PollCard";
 import { FanWall } from "./components/FanWall";
@@ -89,6 +90,20 @@ export default function App() {
         <Ticker name={settings.display_name} location={settings.location} />
 
         {!isConfigured && <ConfigNotice />}
+
+        <Section
+          id="designs"
+          eyebrow="free"
+          title="The designs"
+          aside={
+            <p className="max-w-xs text-sm text-ash">
+              Dropped on a rolling basis. Click one to download it; every file is backed up in
+              the repo.
+            </p>
+          }
+        >
+          <Designs />
+        </Section>
 
         <Section
           id="room"

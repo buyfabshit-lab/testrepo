@@ -1,9 +1,9 @@
 # Drop design files here
 
-Anything you put in this folder shows up automatically on the Rollin Free TV site.
+Anything you put in this folder shows up automatically in the Designs section of the Rollin Free TV site.
 
-Easiest way to add files: open the site and hit **Upload designs**, or go to
-https://github.com/buyfabshit-lab/testrepo/upload/claude/seedance-railway-deploy-lcldsa/vault/files
+Easiest way to add files: open the site and hit **Add designs**, or go to
+https://github.com/buyfabshit-lab/testrepo/upload/claude/seedance-railway-deploy-lcldsa/web/public/vault/files
 and drag your files onto the page, then click **Commit changes**.
 
 Railway redeploys the site after each commit, so new files are downloadable a minute or two later.

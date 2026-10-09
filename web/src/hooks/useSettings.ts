@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { isConfigured, supabase } from "../lib/supabase";
-import defaultAvatar from "../assets/dime.webp";
+import defaultAvatar from "../assets/rollin-free-tv.webp";
 import type { Settings } from "../lib/types";
 
 const FALLBACK: Settings = {
   id: 1,
-  display_name: "DIME",
-  tagline: "late nights, loud games, louder chat",
+  display_name: "Rollin Free TV",
+  tagline: "F.T.W. Free designs, dropped on a rolling basis. Watch on YouTube.",
   bio: null,
   avatar_url: defaultAvatar,
   location: "New York",
@@ -22,7 +22,7 @@ const FALLBACK: Settings = {
 };
 
 /**
- * The single settings row, kept live. When DIME flips `is_live` in the
+ * The single settings row, kept live. When Rollin Free TV flips `is_live` in the
  * dashboard every open tab switches over without a refresh.
  */
 export function useSettings() {

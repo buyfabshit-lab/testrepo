@@ -4,6 +4,7 @@ import type { Fan } from "../lib/fan";
 
 const LINKS = [
   { href: "#live", label: "Live" },
+  { href: "#designs", label: "Designs" },
   { href: "#room", label: "The room" },
   { href: "#wall", label: "Wall" },
   { href: "#schedule", label: "Schedule" },
