@@ -76,7 +76,7 @@ export function Hero({
             )}
           </div>
 
-          <h1 className="display-caps text-[clamp(3.25rem,11vw,7rem)] font-black leading-[0.84]">
+          <h1 className="display-caps text-[clamp(2.75rem,8.5vw,5.5rem)] leading-[0.98]">
             <span className="block text-bone">{settings.display_name}</span>
             <span className="block text-bone">
               {settings.is_live ? "is on air" : "back soon"}

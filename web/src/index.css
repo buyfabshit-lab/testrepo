@@ -11,6 +11,13 @@
   src: url("./assets/fonts/big-shoulders-latin-wght-normal.woff2") format("woff2-variations");
 }
 @font-face {
+  font-family: "Rye";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/rye-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
   font-family: "Archivo Variable";
   font-style: normal;
   font-weight: 100 900;
@@ -38,6 +45,9 @@
      are bundled (@fontsource, imported in main.tsx) so they render on any
      host with no external font request. */
   --font-display: "Big Shoulders Variable", "Arial Narrow", ui-sans-serif, sans-serif;
+  /* Western slab with spurred serifs, matching the lettering on the
+     Rollin Free TV artwork. Used for the big uppercase headings only. */
+  --font-western: "Rye", "Big Shoulders Variable", serif;
   --font-sans: "Archivo Variable", "Helvetica Neue", ui-sans-serif, sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;
 
@@ -129,9 +139,12 @@
 }
 
 @utility display-caps {
-  font-family: var(--font-display);
+  font-family: var(--font-western);
+  font-weight: 400;
+  /* Rye ships one weight; never let the browser fake a bold. */
+  font-synthesis: none;
   text-transform: uppercase;
-  letter-spacing: 0.005em;
+  letter-spacing: 0.02em;
 }
 
 /* Grain overlay — one repeated SVG turbulence tile, no network cost. */
