@@ -83,7 +83,6 @@ export default function App() {
       <main className="mx-auto max-w-6xl space-y-24 px-5 pb-16">
         <Hero
           settings={settings}
-          hype={reactions.recentCount}
           onJumpToChat={jumpToChat}
         />
 
