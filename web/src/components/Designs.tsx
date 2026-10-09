@@ -10,7 +10,8 @@ const FOLDER = "web/public/vault/files";
 
 export const UPLOAD_URL = `https://github.com/${OWNER}/${REPO}/upload/${BRANCH}/${FOLDER}`;
 const BROWSE_URL = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${FOLDER}`;
-const ZIP_URL = `https://download-directory.github.io/?url=${encodeURIComponent(BROWSE_URL)}`;
+/** Built by scripts/zip-designs.mjs on every deploy. */
+const ZIP_URL = "/vault/all-designs.zip";
 
 const IMAGE_EXT = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"]);
 
@@ -93,7 +94,20 @@ export function Designs() {
 
   return (
     <>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ash">
+          {files.length} {files.length === 1 ? "design" : "designs"} &middot; tap one to download it
+        </p>
+        <a
+          href={ZIP_URL}
+          download="rollin-free-tv-designs.zip"
+          className="rounded-full bg-hot-500 px-5 py-2.5 text-sm font-semibold text-white transition-transform glow-hot hover:scale-[1.03]"
+        >
+          Download all (.zip)
+        </a>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {files.map((f) => {
           const ext = extOf(f.name);
           const href = hrefFor(f);
@@ -125,16 +139,16 @@ export function Designs() {
                   </span>
                 )}
               </div>
-              <div className="flex flex-1 flex-col gap-3 p-5">
+              <div className="flex flex-1 flex-col gap-3 p-3 sm:p-5">
                 <div>
-                  <h3 className="break-words font-display text-lg font-bold leading-tight text-bone">
+                  <h3 className="break-words font-display text-sm font-bold leading-tight text-bone sm:text-lg">
                     {f.name}
                   </h3>
-                  <p className="mt-1 font-mono text-[11px] uppercase tracking-widest text-ash">
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-ash sm:text-[11px]">
                     {fmtSize(f.size)}
                   </p>
                 </div>
-                <span className="mt-auto rounded-full bg-hot-500 px-5 py-2.5 text-center text-sm font-semibold text-white transition-transform glow-hot group-hover:scale-[1.02]">
+                <span className="mt-auto rounded-full bg-hot-500 px-4 py-2 text-center text-xs font-semibold text-white transition-transform glow-hot group-hover:scale-[1.02] sm:px-5 sm:py-2.5 sm:text-sm">
                   Download
                 </span>
               </div>
@@ -143,24 +157,6 @@ export function Designs() {
         })}
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <a
-          href={ZIP_URL}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="inline-block rounded-full glass px-4 py-2 text-sm text-bone/85 transition-colors hover:text-bone"
-        >
-          Download everything (.zip)
-        </a>
-        <a
-          href={UPLOAD_URL}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="inline-block rounded-full glass px-4 py-2 text-sm text-bone/85 transition-colors hover:text-bone"
-        >
-          Add designs
-        </a>
-      </div>
     </>
   );
 }
