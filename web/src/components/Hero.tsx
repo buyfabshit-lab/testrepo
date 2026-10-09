@@ -144,9 +144,9 @@ export function Hero({
         {/* On phones the portrait leads — her face is the first thing the
             screen shows. The two-column desktop layout is unchanged. */}
         <div className="relative order-first min-w-0 lg:order-none">
-          <div className="relative overflow-hidden rounded-[28px] glass p-2">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-black sm:aspect-video lg:aspect-[4/5]">
-              {settings.is_live && embed ? (
+          {settings.is_live && embed ? (
+            <div className="relative overflow-hidden rounded-[28px] glass p-2">
+              <div className="relative aspect-video overflow-hidden rounded-[22px] bg-black">
                 <iframe
                   title={settings.stream_title ?? "Live stream"}
                   src={embed}
@@ -154,29 +154,18 @@ export function Hero({
                   allowFullScreen
                   className="absolute inset-0 h-full w-full border-0"
                 />
-              ) : (
-                <>
-                  <img
-                    src={settings.avatar_url ?? defaultAvatar}
-                    alt={settings.display_name}
-                    className="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
-                    loading="eager"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-void via-void/25 to-transparent" />
-                  {!settings.is_live && (
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-hot-400">
-                        offline — but the room's open
-                      </p>
-                      <p className="mt-1 text-sm text-bone/80">
-                        Chat, sign the wall, vote in the poll. It all still lands.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            // Just the artwork: no frame, no fade, no caption. Transparent
+            // designs sit straight on the page.
+            <img
+              src={settings.avatar_url ?? defaultAvatar}
+              alt={settings.display_name}
+              className="mx-auto block max-h-[70vh] w-auto max-w-full"
+              loading="eager"
+            />
+          )}
 
           {/* Hype meter — reactions in the last hour, live. */}
           <div className="mt-3 rounded-2xl glass px-4 py-3">
