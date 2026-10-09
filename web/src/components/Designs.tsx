@@ -120,11 +120,7 @@ export function Designs() {
               className="group flex flex-col overflow-hidden rounded-3xl glass transition-transform duration-300 hover:-translate-y-1"
             >
               <div
-                className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
-                style={{
-                  background:
-                    "radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.07), transparent 60%), linear-gradient(160deg, #17131f, #0c0a11)",
-                }}
+                className="relative flex aspect-[4/5] items-center justify-center overflow-hidden bg-black"
               >
                 {IMAGE_EXT.has(ext) ? (
                   <img
