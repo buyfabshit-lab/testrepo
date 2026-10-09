@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PresenceBadge } from "./PresenceBadge";
 import type { Fan } from "../lib/fan";
+import { UPLOAD_URL } from "./Designs";
 
 const LINKS = [
   { href: "#live", label: "Live" },
@@ -90,6 +91,16 @@ export function Header({
             />
             <span className="max-w-[9ch] truncate">{fan.handle}</span>
           </button>
+
+          <a
+            href={UPLOAD_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="whitespace-nowrap rounded-full bg-hot-500 px-3.5 py-2 text-xs font-semibold text-white transition-transform glow-hot hover:scale-[1.03]"
+          >
+            <span className="sm:hidden">Upload</span>
+            <span className="hidden sm:inline">Upload designs</span>
+          </a>
 
           <button
             type="button"
