@@ -76,7 +76,7 @@ export function Hero({
             )}
           </div>
 
-          <h1 className="display-caps text-[clamp(2.75rem,8.5vw,5.5rem)] leading-[0.98]">
+          <h1 className="display-caps patch-caps text-[clamp(2.75rem,8.5vw,5.5rem)] leading-[0.98]">
             <span className="block text-bone">{settings.display_name}</span>
             <span className="block text-bone">
               {settings.is_live ? "is on air" : "back soon"}
@@ -147,12 +147,23 @@ export function Hero({
               />
             </div>
           ) : (
-            <img
-              src={settings.avatar_url ?? defaultAvatar}
-              alt={settings.display_name}
-              className="mx-auto block w-full max-w-[640px] sm:max-w-[760px] lg:h-[min(92vh,1200px)] lg:w-auto lg:max-w-none"
-              loading="eager"
-            />
+            <div className="relative">
+              {/* Red ember glow behind the artwork. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-[8%] z-0 rounded-full blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(closest-side, rgba(229,50,45,0.45), rgba(229,50,45,0.12) 55%, transparent 75%)",
+                }}
+              />
+              <img
+                src={settings.avatar_url ?? defaultAvatar}
+                alt={settings.display_name}
+                className="relative z-10 mx-auto block w-full max-w-[640px] sm:max-w-[760px] lg:h-[min(92vh,1200px)] lg:w-auto lg:max-w-none"
+                loading="eager"
+              />
+            </div>
           )}
         </div>
       </div>
