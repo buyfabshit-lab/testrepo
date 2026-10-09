@@ -41,7 +41,7 @@ export function FanWall({
           onChange={(e) => setDraft(e.target.value)}
           maxLength={500}
           rows={3}
-          placeholder="Leave something for DIME. This one sticks around."
+          placeholder="Leave something for Rollin Free TV. This one sticks around."
           aria-label="Wall post"
           className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-bone outline-none placeholder:text-ash/70"
         />

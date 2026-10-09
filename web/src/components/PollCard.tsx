@@ -21,7 +21,7 @@ export function PollCard({
       <div className="rounded-3xl glass p-6">
         <h3 className="font-display text-sm font-bold tracking-wide text-bone">POLL</h3>
         <p className="mt-3 text-sm text-ash">
-          No poll running. DIME opens one when there's a decision worth handing over.
+          No poll running. Rollin Free TV opens one when there's a decision worth handing over.
         </p>
       </div>
     );

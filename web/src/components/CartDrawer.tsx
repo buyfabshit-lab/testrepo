@@ -81,7 +81,7 @@ export function CartDrawer({
                   <p className="font-display text-lg font-bold text-bone">Paid. Thank you.</p>
                   <p className="mt-2 text-sm text-ash">
                     Stripe has your payment and your receipt is on its way by email.
-                    DIME packs and ships from New York.
+                    Rollin Free TV packs and ships from New York.
                   </p>
                   <button
                     type="button"
