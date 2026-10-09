@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HQ</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.jpg">
+<style>
+  :root { --bg:#0a0507; --panel:#15101a; --line:#2a2230; --text:#f5f1ec; --muted:#a2a0b0; --red:#e11227; --cream:#efe6d2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width:1040px; margin:0 auto; padding:32px 16px 72px; }
+  h1 { margin:0; font-size:2rem; letter-spacing:.04em; text-transform:uppercase; color:var(--cream); text-shadow:.045em .045em 0 var(--red); }
+  .sub { color:var(--muted); margin:6px 0 0; }
+  section { margin-top:28px; }
+  h2 { font-size:.8rem; letter-spacing:.2em; text-transform:uppercase; color:var(--red); margin:0 0 10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; }
+  a.card { display:block; padding:14px 16px; background:var(--panel); border:1px solid var(--line); border-radius:12px; color:var(--text); text-decoration:none; }
+  a.card:hover { border-color:var(--red); }
+  a.card b { display:block; font-size:1.02rem; }
+  a.card span { display:block; color:var(--muted); font-size:.9rem; margin-top:3px; }
+  a.card.hot { border-color:var(--red); background:linear-gradient(180deg,#1d0f14,var(--panel)); }
+  footer { margin-top:40px; color:var(--muted); font-size:.85rem; }
+  footer a { color:var(--cream); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>HQ</h1>
+  <p class="sub">The public front doors. Sites, designs, code.</p>
+
+  <section>
+    <h2>Live sites</h2>
+    <div class="grid">
+      <a class="card hot" href="/"><b>Rollin Free TV</b><span>The main site. Designs, live room, wall, shop.</span></a>
+      <a class="card" href="https://oa-wip-production.up.railway.app" target="_blank" rel="noopener"><b>OA WIP board</b><span>Oceanaire production board.</span></a>
+      <a class="card" href="https://deathcorps.shop" target="_blank" rel="noopener"><b>Death Corps shop</b><span>Shopify storefront.</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Designs</h2>
+    <div class="grid">
+      <a class="card hot" href="https://github.com/buyfabshit-lab/testrepo/upload/claude/seedance-railway-deploy-lcldsa/web/public/vault/files" target="_blank" rel="noopener"><b>Upload designs</b><span>Drag files in, hit Commit. Live a minute later.</span></a>
+      <a class="card" href="/#designs"><b>The designs section</b><span>Cards, one-click download.</span></a>
+      <a class="card" href="/vault/all-designs.zip"><b>Download all designs (.zip)</b><span>Rebuilt on every deploy.</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code</h2>
+    <div class="grid">
+      <a class="card" href="https://github.com/buyfabshit-lab/testrepo" target="_blank" rel="noopener"><b>testrepo</b><span>This site.</span></a>
+      <a class="card" href="https://github.com/buyfabshit-lab/oa-wip" target="_blank" rel="noopener"><b>oa-wip</b><span>Oceanaire board, with the ERP plan under docs/.</span></a>
+    </div>
+  </section>
+
+  <footer>Public page: nothing private goes here. <a href="/">Back to the site</a></footer>
+</div>
+</body>
+</html>
