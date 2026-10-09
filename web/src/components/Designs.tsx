@@ -123,7 +123,7 @@ export function Designs() {
                 className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
                 style={{
                   background:
-                    "repeating-conic-gradient(#17131f 0 25%, #0c0a11 0 50%) 0 0 / 28px 28px",
+                    "radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.07), transparent 60%), linear-gradient(160deg, #17131f, #0c0a11)",
                 }}
               >
                 {IMAGE_EXT.has(ext) ? (
