@@ -145,7 +145,7 @@ export function Hero({
             screen shows. The two-column desktop layout is unchanged. */}
         <div className="relative order-first min-w-0 lg:order-none">
           <div className="relative overflow-hidden rounded-[28px] glass p-2">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-ink sm:aspect-video lg:aspect-[4/5]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-black sm:aspect-video lg:aspect-[4/5]">
               {settings.is_live && embed ? (
                 <iframe
                   title={settings.stream_title ?? "Live stream"}
