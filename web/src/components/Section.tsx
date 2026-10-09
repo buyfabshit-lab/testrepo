@@ -20,7 +20,7 @@ export function Section({
           <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-hot-400">
             {eyebrow}
           </p>
-          <h2 className="display-caps mt-1.5 text-4xl font-black text-bone sm:text-5xl">
+          <h2 className="display-caps patch-caps mt-1.5 text-4xl sm:text-5xl">
             {title}
           </h2>
         </div>
