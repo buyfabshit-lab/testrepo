@@ -1,4 +1,4 @@
-# DIME site: pin Node 22 and keep the build/start phases explicit.
+# Rollin Free TV vault: pin Node 22 and keep the build/start phases explicit.
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 

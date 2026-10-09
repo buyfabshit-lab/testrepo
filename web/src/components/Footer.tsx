@@ -38,15 +38,6 @@ export function Footer({ name, socials, bio }: { name: string; socials: Social[]
         )}
       </div>
 
-      <p className="mt-8">
-        <a
-          href="/vault/"
-          className="inline-block rounded-full glass px-4 py-2 text-sm text-bone/85 transition-colors hover:text-bone"
-        >
-          Free designs &rarr;
-        </a>
-      </p>
-
       <p className="mt-10 pb-28 text-xs text-ash/70">
         © {new Date().getFullYear()} {name}. Chat, wall posts and votes are stored in
         Supabase and visible to everyone in the room.

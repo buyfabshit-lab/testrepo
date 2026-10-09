@@ -1,11 +1,14 @@
 {
-  "name": "dime-live-monorepo",
+  "name": "rollin-free-tv",
   "private": true,
-  "version": "1.0.0",
-  "description": "DIME's live site lives in web/. This root manifest exists so hosts that deploy the repo root (Railway among them) build and serve it with zero configuration.",
+  "version": "2.0.0",
+  "description": "Rollin Free TV design vault lives in vault/ and is served as static files. DIME's site still lives in web/ (deployed separately on Vercel).",
   "engines": { "node": ">=20" },
   "scripts": {
-    "build": "cd web && npm ci --include=dev && npm run build",
-    "start": "cd web && npm start"
+    "build": "echo \"vault/ is static; nothing to build\"",
+    "start": "serve vault -l ${PORT:-4173}"
+  },
+  "dependencies": {
+    "serve": "^14.2.6"
   }
 }
