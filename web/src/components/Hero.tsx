@@ -159,7 +159,7 @@ export function Hero({
                   <img
                     src={settings.avatar_url ?? defaultAvatar}
                     alt={settings.display_name}
-                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    className="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
                     loading="eager"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-void via-void/25 to-transparent" />
