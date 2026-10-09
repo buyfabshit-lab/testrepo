@@ -60,7 +60,7 @@
   <div id="grid" class="grid"></div>
 
   <footer>
-    Files are stored in the <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub repo</a>, so this page doubles as a backup.
+    <a href="/">&larr; Back to the main site</a> &middot; Files are stored in the <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub repo</a>, so this page doubles as a backup.
   </footer>
 </div>
 
@@ -69,11 +69,10 @@
   const OWNER = 'buyfabshit-lab';
   const REPO = 'testrepo';
   const BRANCH = 'claude/seedance-railway-deploy-lcldsa';
-  const FOLDER = 'designs-vault/files';
+  const FOLDER = 'web/public/vault/files';
   // ---------------------------------------------------------------
 
   const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
-  const onPages = location.hostname.endsWith('github.io');
 
   document.getElementById('repoLink').href = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${FOLDER}`;
   document.getElementById('uploadLink').href = `https://github.com/${OWNER}/${REPO}/upload/${BRANCH}/${FOLDER}`;
@@ -95,10 +94,10 @@
   }
 
   function hrefFor(f) {
-    // On GitHub Pages the files are served next to this page, so the download attribute works.
-    // Anywhere else, fall back to the raw GitHub URL.
+    // The files are deployed under /vault/files/ on the same site, so link to them
+    // directly. Same-origin links let the download attribute force a save.
     const rel = f.path.slice(FOLDER.length + 1);
-    return onPages ? `files/${rel.split('/').map(encodeURIComponent).join('/')}` : f.download_url;
+    return `/vault/files/${rel.split('/').map(encodeURIComponent).join('/')}`;
   }
 
   async function listFolder(path) {
