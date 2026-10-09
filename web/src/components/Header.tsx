@@ -53,7 +53,7 @@ export function Header({
     >
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-4">
         <a href="#live" className="flex items-center gap-2.5">
-          <span className="display-caps text-2xl font-black text-bone">
+          <span className="display-caps text-base leading-tight text-bone sm:text-2xl">
             {name}
           </span>
           {live && (
