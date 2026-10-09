@@ -30,11 +30,9 @@ function Unit({ value, label }: { value: number; label: string }) {
 
 export function Hero({
   settings,
-  hype,
   onJumpToChat,
 }: {
   settings: Settings;
-  hype: number;
   onJumpToChat: () => void;
 }) {
   const [now, setNow] = useState(() => Date.now());
@@ -49,7 +47,7 @@ export function Hero({
 
   return (
     <section id="live" className="scroll-mt-24 pt-6 sm:pt-10">
-      <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.35fr] lg:items-center">
         <div className="min-w-0">
           <div className="mb-5 inline-flex items-center gap-2.5 rounded-full glass px-3.5 py-2">
             <span className="relative flex h-2.5 w-2.5">
@@ -141,52 +139,27 @@ export function Hero({
           )}
         </div>
 
-        {/* On phones the portrait leads — her face is the first thing the
-            screen shows. The two-column desktop layout is unchanged. */}
+        {/* On phones the artwork leads. No box, no frame: the eagle sits
+            straight on the page, as big as the column allows. */}
         <div className="relative order-first min-w-0 lg:order-none">
           {settings.is_live && embed ? (
-            <div className="relative overflow-hidden rounded-[28px] glass p-2">
-              <div className="relative aspect-video overflow-hidden rounded-[22px] bg-black">
-                <iframe
-                  title={settings.stream_title ?? "Live stream"}
-                  src={embed}
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0 h-full w-full border-0"
-                />
-              </div>
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
+              <iframe
+                title={settings.stream_title ?? "Live stream"}
+                src={embed}
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full border-0"
+              />
             </div>
           ) : (
-            // Just the artwork: no frame, no fade, no caption. Transparent
-            // designs sit straight on the page.
             <img
               src={settings.avatar_url ?? defaultAvatar}
               alt={settings.display_name}
-              className="mx-auto block max-h-[70vh] w-auto max-w-full"
+              className="mx-auto block w-full max-w-[640px] sm:max-w-[760px] lg:h-[min(92vh,1200px)] lg:w-auto lg:max-w-none"
               loading="eager"
             />
           )}
-
-          {/* Hype meter — reactions in the last hour, live. */}
-          <div className="mt-3 rounded-2xl glass px-4 py-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-mono uppercase tracking-[0.2em] text-ash">hype</span>
-              <span className="font-semibold tabular-nums text-bone">
-                {hype.toLocaleString()}
-                <span className="ml-1 font-normal text-ash">this hour</span>
-              </span>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
-              <div
-                className="h-full rounded-full transition-[width] duration-700 ease-out"
-                style={{
-                  width: `${Math.min(100, Math.log10(hype + 1) * 33)}%`,
-                  background:
-                    "linear-gradient(90deg, var(--color-hot-500), var(--color-gold-400))",
-                }}
-              />
-            </div>
-          </div>
         </div>
       </div>
     </section>
