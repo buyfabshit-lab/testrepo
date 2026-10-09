@@ -78,13 +78,7 @@ export function Hero({
 
           <h1 className="display-caps text-[clamp(3.25rem,11vw,7rem)] font-black leading-[0.84]">
             <span className="block text-bone">{settings.display_name}</span>
-            <span
-              className="block bg-clip-text text-transparent"
-              style={{
-                backgroundImage:
-                  "linear-gradient(100deg, var(--color-hot-400), var(--color-gold-400) 55%, var(--color-hot-500))",
-              }}
-            >
+            <span className="block text-bone">
               {settings.is_live ? "is on air" : "back soon"}
             </span>
           </h1>
