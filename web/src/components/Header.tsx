@@ -8,7 +8,6 @@ const LINKS = [
   { href: "#wall", label: "Wall" },
   { href: "#schedule", label: "Schedule" },
   { href: "#shop", label: "Shop" },
-  { href: "/vault/", label: "Designs" },
 ];
 
 export function Header({

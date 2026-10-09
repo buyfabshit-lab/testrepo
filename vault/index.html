@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Design Vault</title>
-<meta name="description" content="Rolling drop of free design files. Grab what you need.">
+<title>Rollin Free TV</title>
+<meta name="description" content="Rollin Free TV: free designs, dropped on a rolling basis. Grab what you need and watch on YouTube.">
 <style>
   :root {
     --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e8eaf0;
-    --muted: #9aa3b2; --accent: #ffb020; --accent-text: #171a21;
+    --muted: #9aa3b2; --accent: #e5322d; --accent-text: #ffffff;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
@@ -43,8 +43,8 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Design Vault</h1>
-      <p class="sub">Free designs, updated on a rolling basis. Click any card to download.</p>
+      <h1>Rollin Free TV</h1>
+      <p class="sub">F.T.W. Free designs, dropped on a rolling basis. Click any card to download.</p>
     </div>
     <div class="actions">
       <a class="btn" id="zipLink" href="#" title="Zips the whole folder of designs">Download everything (.zip)</a>
@@ -60,7 +60,7 @@
   <div id="grid" class="grid"></div>
 
   <footer>
-    <a href="/">&larr; Back to the main site</a> &middot; Files are stored in the <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub repo</a>, so this page doubles as a backup.
+    Files are stored in the <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub repo</a>, so this page doubles as a backup.
   </footer>
 </div>
 
@@ -69,7 +69,7 @@
   const OWNER = 'buyfabshit-lab';
   const REPO = 'testrepo';
   const BRANCH = 'claude/seedance-railway-deploy-lcldsa';
-  const FOLDER = 'web/public/vault/files';
+  const FOLDER = 'vault/files';
   // ---------------------------------------------------------------
 
   const IMAGE_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
@@ -94,10 +94,10 @@
   }
 
   function hrefFor(f) {
-    // The files are deployed under /vault/files/ on the same site, so link to them
-    // directly. Same-origin links let the download attribute force a save.
+    // The files are deployed under /files/ on this site, so link to them directly.
+    // Same-origin links let the download attribute force a save.
     const rel = f.path.slice(FOLDER.length + 1);
-    return `/vault/files/${rel.split('/').map(encodeURIComponent).join('/')}`;
+    return `/files/${rel.split('/').map(encodeURIComponent).join('/')}`;
   }
 
   async function listFolder(path) {
