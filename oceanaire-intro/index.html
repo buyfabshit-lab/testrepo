@@ -7,12 +7,12 @@
   /* Layout: one cinematic 16:9 stage, controls tucked under it, nothing else
      competing. Committed single dark look — this is a title card, not a document. */
   :root {
-    --ink: #04070c;          /* night water, the page ground */
-    --ink-2: #05080e;        /* stage floor, a shade off the page */
-    --sea: #1b3550;          /* body of the wave */
-    --foam: #eef4f6;         /* bone white, taken from the engraving */
-    --chrome: #9dc3ec;       /* the blue in the polished logo */
-      --rule: #1b242f;
+    --ink: #050506;          /* black sand, the page ground */
+    --ink-2: #070708;        /* stage floor, a shade off the page */
+    --sea: #3a3d3e;          /* body of the wave */
+    --foam: #f0f4f3;         /* bone white, taken from the engraving */
+    --chrome: #b9bebc;       /* silver, the only accent the scene gets */
+      --rule: #1d1f20;
     --font-script: "Great Vibes", "Snell Roundhand", "Apple Chancery", cursive;
     --font-roman: "Cormorant Garamond", Georgia, "Times New Roman", serif;
     color-scheme: dark;
@@ -49,13 +49,32 @@
 
   .stage canvas { display: block; width: 100%; height: 100%; }
 
+  /* The click only offers itself once the mark is standing. */
+  .stage.ready { cursor: pointer; }
+  .stage .cue {
+    position: absolute;
+    left: 50%;
+    bottom: 7%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--foam);
+    opacity: 0;
+    transition: opacity 900ms ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .stage.ready .cue { opacity: 0.6; }
+  .stage:focus-visible { outline: 2px solid var(--chrome); outline-offset: 2px; }
+
   /* Lens vignette — keeps the eye in the middle and hides the lattice edges. */
   .stage::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(2, 4, 8, 0.72) 100%);
+    background: radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(3, 3, 4, 0.74) 100%);
   }
 
   .bar {
@@ -109,7 +128,8 @@
   }
 </style>
 
-<div class="stage">
+<div class="stage" tabindex="0" role="button" aria-label="Enter — the wind takes the mark">
+  <span class="cue">Click to enter</span>
   <canvas id="stage" aria-label="A wave of droplets breaking and settling into the Ocean Air wordmark"></canvas>
 </div>
 
@@ -119,10 +139,14 @@
 </div>
 
 <p class="note">
-  Every droplet carries the position it will end up holding in the wordmark. The wave
-  swells, the crest breaks into whitewash, the sheet runs up the beach — and on the
-  drawback each droplet springs to the letter it was always going to be part of.
-  <b>Nothing is added and nothing is thrown away</b>; it is the same water the whole way through.
+  Every droplet carries the position it will end up holding in the wordmark. The wave swells,
+  the crest breaks into whitewash, and on the drawback each droplet springs to the letter it
+  was always going to be part of. Click the stage and an offshore wind shreds the mark
+  downwind — all but the droplets that carry on into the corner and stand it back up, small,
+  where a site header would hold it. <b>Nothing is added and nothing is thrown away</b>: it is
+  the same water from the first frame to the last. Behind it the surface is drawn as long jagged
+  strands, straight run to straight run, kinking slightly at every vertex — the bends carry the
+  ripple and nothing is ever curved.
 </p>
 
 <script>
@@ -130,9 +154,10 @@
   "use strict";
 
   // Change these two and the whole intro re-forms around them.
-  const WORDMARK = "Ocean Air";
+  const WORDMARK = "Ocean Aire";
   const SUBMARK  = "SPORTSWEAR";
 
+  const stage = document.querySelector(".stage");
   const canvas = document.getElementById("stage");
   const ctx = canvas.getContext("2d", { alpha: false });
   const phaseLabel = document.getElementById("phase");
@@ -148,6 +173,7 @@
   let raf = 0;
   let sprites = null;
   let backdrop = null;
+  let windAt = -1;   // when the gust took the mark, in seconds
 
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
   const ease = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
@@ -162,7 +188,8 @@
      Drawing type and sampling its pixels beats hand-written path data: the
      letterforms stay real type, and the droplet count follows the ink.
   --------------------------------------------------------------------- */
-  function sampleWordmark(count) {
+  function sampleWordmark(count, place) {
+    const fit = place.fit, cx = place.cx, cy = place.cy;
     const off = document.createElement("canvas");
     off.width = Math.round(W);
     off.height = Math.round(H);
@@ -177,23 +204,23 @@
     // Measure the whole lockup, then scale it to fit the stage. Fixed sizes
     // clip the swash off the right edge the moment the wordmark gets longer.
     const geom = (scale) => {
-      const ringR = H * 0.19 * scale;
-      const scriptSize = H * 0.4 * scale;
+      const ringR = H * 0.19 * scale * fit / 0.9;
+      const scriptSize = H * 0.4 * scale * fit / 0.9;
       c.font = `${scriptSize}px "Great Vibes", cursive`;
       const sw = c.measureText(scriptText).width;
-      const tail = W * 0.075;
+      const tail = W * 0.075 * fit / 0.9;
       // The script begins inside the ring's right edge, the way the mark laps them.
       const width = ringR * 2 + ringR * 0.45 + sw + tail;
       return { ringR, scriptSize, sw, tail, width };
     };
 
     let g = geom(1);
-    const room = W * 0.9;
+    const room = W * fit;
     if (g.width > room) g = geom(room / g.width);
 
-    const left = (W - g.width) / 2;
+    const left = cx - g.width / 2;
     const ringX = left + g.ringR;
-    const ringY = H * 0.44;
+    const ringY = cy;
 
     c.lineWidth = Math.max(2, g.ringR * 0.15);
     c.beginPath();
@@ -266,8 +293,11 @@
      spends the whole sequence travelling to it.
   --------------------------------------------------------------------- */
   function build() {
-    const budget = W < 620 ? 2000 : W < 980 ? 3200 : 4600;
-    const targets = sampleWordmark(budget);
+    const budget = W < 620 ? 2800 : W < 980 ? 4600 : 6800;
+    const targets = sampleWordmark(budget, { fit: 0.9, cx: W / 2, cy: H * 0.44 });
+    // The same mark again, small and in the corner — where it lands once the
+    // wind has taken the big one. Same water, just less of it.
+    const header = sampleWordmark(1500, { fit: 0.3, cx: W * 0.2, cy: H * 0.12 });
     const n = targets.length / 2;
     particles = new Array(n);
     for (let i = 0; i < n; i++) {
@@ -281,7 +311,18 @@
         rank: targets[i * 2] / W,
         size: 0.6 + Math.random() * 1.5,
         lit: 0,
+        hx: 0, hy: 0, keeps: false,
       };
+    }
+
+    // Spread the survivors evenly through the cloud, so the corner mark is
+    // drawn from the whole wordmark rather than from one corner of it.
+    const keep = header.length / 2;
+    const stride = Math.max(1, Math.floor(n / keep));
+    for (let k = 0, i = 0; k < keep && i < n; k++, i += stride) {
+      particles[i].keeps = true;
+      particles[i].hx = header[k * 2];
+      particles[i].hy = header[k * 2 + 1];
     }
   }
 
@@ -307,6 +348,34 @@
   let broke = false;
 
   function update(dt, t) {
+    if (windAt >= 0) {
+      const since = t - windAt;
+      for (const p of particles) {
+        if (p.keeps) {
+          // Caught by the gust first, then hauled back into the corner mark.
+          const pull = 30 * ramp(since, 0.22 + p.seed * 0.3, 0.8);
+          p.vx += (p.hx - p.x) * pull * dt;
+          p.vy += (p.hy - p.y) * pull * dt;
+          const damp = Math.exp(-7 * dt);
+          p.vx *= damp;
+          p.vy *= damp;
+          p.lit += (1 - p.lit) * clamp(dt * 3, 0, 1);
+        } else {
+          // Offshore wind: it builds, gusts, and shreds the mark downwind.
+          const gust = 240 + 900 * ramp(since, 0, 0.75);
+          const swirl = Math.sin(p.y * 0.02 + t * 3.1 + p.seed * 7) * 160;
+          p.vx += (gust * (0.5 + p.seed)) * dt;
+          p.vy += (swirl - 120 * p.seed) * dt;
+          p.vx *= Math.exp(-0.5 * dt);
+          p.vy *= Math.exp(-1.1 * dt);
+          p.lit *= Math.exp(-0.5 * dt);
+        }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+      }
+      return;
+    }
+
     if (t < BREAK) {
       // Kinematic while the wave is intact: the shape is art-directed, so it
       // always reads as a wave instead of hoping a simulation behaves.
@@ -391,10 +460,23 @@
       c.fillRect(0, 0, r * 2, r * 2);
       return s;
     };
+    const hard = document.createElement("canvas");
+    hard.width = hard.height = 32;
+    {
+      const c = hard.getContext("2d");
+      const g = c.createRadialGradient(16, 16, 0, 16, 16, 16);
+      g.addColorStop(0, "rgba(246,248,247,1)");
+      g.addColorStop(0.55, "rgba(246,248,247,0.95)");
+      g.addColorStop(0.82, "rgba(246,248,247,0.3)");
+      g.addColorStop(1, "rgba(246,248,247,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, 32, 32);
+    }
     return {
-      sea: make("46,74,102"),
-      mid: make("130,170,204"),
-      foam: make("238,246,250"),
+      sea: make("64,68,70"),
+      mid: make("150,156,158"),
+      foam: make("240,244,243"),
+      hard,
     };
   }
 
@@ -411,21 +493,21 @@
     const c = b.getContext("2d");
 
     const ground = c.createLinearGradient(0, 0, 0, H);
-    ground.addColorStop(0, "#04060a");
-    ground.addColorStop(0.55, "#070c13");
-    ground.addColorStop(1, "#03050a");
+    ground.addColorStop(0, "#050506");
+    ground.addColorStop(0.55, "#0a0b0c");
+    ground.addColorStop(1, "#040405");
     c.fillStyle = ground;
     c.fillRect(0, 0, W, H);
 
     // A cold wash low and right, where the swell comes in from.
     const wash = c.createRadialGradient(W * 0.72, shoreY - H * 0.1, 0, W * 0.72, shoreY - H * 0.1, W * 0.6);
-    wash.addColorStop(0, "rgba(96,150,200,0.1)");
-    wash.addColorStop(1, "rgba(96,150,200,0)");
+    wash.addColorStop(0, "rgba(176,180,178,0.085)");
+    wash.addColorStop(1, "rgba(176,180,178,0)");
     c.fillStyle = wash;
     c.fillRect(0, 0, W, H);
 
     // Engraver's hatching, kept to a whisper — texture, not scenery.
-    c.strokeStyle = "rgba(150,190,222,0.03)";
+    c.strokeStyle = "rgba(196,200,198,0.028)";
     c.lineWidth = 1;
     for (let y = 0; y < H; y += 3) {
       c.beginPath();
@@ -436,9 +518,9 @@
 
     // The one graphic element: a hairline the whitewash runs along.
     const rule = c.createLinearGradient(0, 0, W, 0);
-    rule.addColorStop(0, "rgba(170,205,235,0)");
-    rule.addColorStop(0.5, "rgba(170,205,235,0.22)");
-    rule.addColorStop(1, "rgba(170,205,235,0)");
+    rule.addColorStop(0, "rgba(206,210,208,0)");
+    rule.addColorStop(0.5, "rgba(206,210,208,0.2)");
+    rule.addColorStop(1, "rgba(206,210,208,0)");
     c.strokeStyle = rule;
     c.beginPath();
     c.moveTo(0, shoreY + 0.5);
@@ -448,38 +530,138 @@
     return b;
   }
 
+  /* ---------------------------------------------------------------------
+     The water as line work: long strands drawn clear across the stage, each
+     one a run of straight segments that kink slightly at every vertex. No
+     curves anywhere — the bends are what carry the ripple, and keeping the
+     segments straight is what makes it read as Cubism rather than as a
+     smooth wave. Each vertex also holds a small fixed offset of its own, so
+     the bends stay irregular instead of marching in step.
+  --------------------------------------------------------------------- */
+  let strands = null;
+
+  function buildStrands() {
+    const gap = Math.max(22, H / 26);
+    const seg = Math.max(42, W / 22);
+    const rows = Math.ceil(H / gap) + 2;
+    const cols = Math.ceil(W / seg) + 2;
+    // The kinks are fixed per vertex, so a strand keeps its own character
+    // frame to frame instead of shimmering randomly.
+    const kink = new Float32Array(rows * cols);
+    for (let i = 0; i < kink.length; i++) kink[i] = (Math.random() - 0.5) * gap * 0.55;
+    strands = { gap, seg, rows, cols, kink };
+  }
+
+  /** Three crossing swells plus one spreading ring. */
+  function height(x, y, t) {
+    const a = Math.sin((x * 0.0115 + y * 0.004) + t * 1.15);
+    const b = Math.sin((x * -0.0062 + y * 0.0135) - t * 0.82);
+    const c = Math.sin((x * 0.0042 + y * -0.0071) + t * 1.55);
+    const dx = x - W * 0.72, dy = (y - H * 0.6) * 1.8;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const ring = Math.sin(d * 0.022 - t * 2.1) * Math.exp(-d / (W * 0.55));
+    return a * 0.4 + b * 0.32 + c * 0.2 + ring * 0.42;
+  }
+
+  function drawWater(t) {
+    const { gap, seg, rows, cols, kink } = strands;
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+
+    for (let r = 0; r < rows; r++) {
+      const baseY = (r - 0.5) * gap;
+      // Strands lie closer together and fainter up the stage, which is the
+      // only perspective cue the scene gets.
+      const depth = clamp(baseY / H, 0, 1);
+      const amp = gap * (0.5 + depth * 1.25);
+
+      let prevY = 0;
+      let steepest = 0;
+      ctx.beginPath();
+      for (let c = 0; c < cols; c++) {
+        const x = (c - 0.5) * seg;
+        const y = baseY + height(x, baseY, t) * amp + kink[r * cols + c];
+        if (c === 0) ctx.moveTo(x, y);
+        else {
+          ctx.lineTo(x, y);
+          const slope = Math.abs(y - prevY) / seg;
+          if (slope > steepest) steepest = slope;
+        }
+        prevY = y;
+      }
+
+      // A strand brightens where it is climbing hardest — the light catching
+      // the face of a ripple rather than its flat.
+      const lit = clamp(steepest * 1.5, 0, 1);
+      const alpha = (0.05 + depth * 0.1 + lit * 0.22) * (reduced ? 0.7 : 1);
+      const v = Math.round(126 + lit * 118);
+      ctx.strokeStyle = `rgba(${v},${v + 4},${v + 3},${alpha})`;
+      ctx.lineWidth = 1 + lit * 1.1;
+      ctx.stroke();
+    }
+  }
+
   function draw(t) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     ctx.drawImage(backdrop, 0, 0, W, H);
+    drawWater(reduced ? 0 : t);
 
     // A slow chrome sweep once the mark is held, so the logo catches light.
     const sweep = t > FORM ? ((t - FORM) * 0.42) % 2.6 : -1;
     const sweepX = sweep >= 0 ? (sweep / 2.6) * (W * 1.4) - W * 0.2 : -9999;
 
-    ctx.globalCompositeOperation = "lighter";
-    for (const p of particles) {
-      const lit = p.lit;
-      const sprite = lit > 0.62 ? sprites.foam : lit > 0.3 ? sprites.mid : sprites.sea;
-      let r = p.size * (1.9 + lit * 2.1);
-      let alpha = 0.34 + lit * 0.5;
-      if (sweep >= 0) {
-        const d = Math.abs(p.x - sweepX) / (W * 0.1);
-        if (d < 1) {
-          const hit = (1 - d) * (1 - d);
-          alpha = Math.min(1, alpha + hit * 0.75);
-          r += hit * 1.7;
+    // How hard-edged a droplet is right now. A letterform built out of soft
+    // glows is a smear, so the mark tightens to ink as it stands and only
+    // comes apart again once the wind has it.
+    const sharpness = (p) => {
+      if (windAt >= 0) return p.keeps ? 1 : clamp(1 - (t - windAt) / 0.4, 0, 1);
+      return ramp(t, FORM - 0.4, 0.85);
+    };
+
+    // Two passes: spray glows additively, ink does not. Mixing the two in one
+    // pass would blow the overlaps out and put the blur straight back.
+    const spray = [], ink = [];
+    for (const p of particles) (sharpness(p) >= 0.45 ? ink : spray).push(p);
+
+    const paint = (list, hardPass) => {
+      for (const p of list) {
+        const lit = p.lit;
+        const sh = sharpness(p);
+        const soft = p.size * (1.9 + lit * 2.1);
+        const tight = p.size * (0.6 + lit * 0.45);
+        let r = soft + (tight - soft) * sh;
+        let alpha = hardPass ? 0.55 + lit * 0.45 : 0.34 + lit * 0.5;
+        if (windAt >= 0 && !p.keeps) {
+          alpha *= clamp(1.25 - p.x / W, 0, 1);
+          if (alpha < 0.012) continue;
         }
+        if (sweep >= 0) {
+          const d = Math.abs(p.x - sweepX) / (W * 0.1);
+          if (d < 1) {
+            const hit = (1 - d) * (1 - d);
+            alpha = Math.min(1, alpha + hit * 0.6);
+            r += hit * (hardPass ? 0.5 : 1.7);
+          }
+        }
+        const sprite = hardPass ? sprites.hard
+          : lit > 0.62 ? sprites.foam : lit > 0.3 ? sprites.mid : sprites.sea;
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
       }
-      ctx.globalAlpha = alpha;
-      ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
-    }
+    };
+
+    ctx.globalCompositeOperation = "lighter";
+    paint(spray, false);
+    ctx.globalCompositeOperation = "source-over";
+    paint(ink, true);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
   }
 
   function label(t) {
-    const name = t < SWELL ? "Swell" : t < BREAK ? "Break" : t < WASH ? "Whitewash" : t < FORM ? "Drawback" : "Ocean Air";
+    const name = windAt >= 0 ? "Enter" :
+      t < SWELL ? "Swell" : t < BREAK ? "Break" : t < WASH ? "Whitewash" : t < FORM ? "Drawback" : WORDMARK;
     if (phaseLabel.textContent !== name) phaseLabel.textContent = name;
   }
 
@@ -501,17 +683,39 @@
     update(dt, t);
     draw(t);
     label(t);
+    if (windAt < 0 && t > FORM && !stage.classList.contains("ready")) stage.classList.add("ready");
     raf = requestAnimationFrame(frame);
+  }
+
+  /** Click once the mark is held and the wind takes it. */
+  function enter() {
+    if (windAt >= 0 || !particles.length) return;
+    windAt = (performance.now() - start) / 1000;
+    if (windAt < FORM) windAt = FORM;     // never mid-formation
+    stage.classList.remove("ready");
+    if (reduced) {
+      for (const p of particles) {
+        if (p.keeps) { p.x = p.hx; p.y = p.hy; p.lit = 1; }
+        else { p.lit = 0; p.x = W * 2; }
+      }
+      draw(FORM + 2);
+      label(FORM + 2);
+      return;
+    }
+    if (!raf) { start = performance.now() - FORM * 1000; last = performance.now(); raf = requestAnimationFrame(frame); }
   }
 
   function run() {
     cancelAnimationFrame(raf);
+    raf = 0;
+    windAt = -1;
+    stage.classList.remove("ready");
     broke = false;
     for (const p of particles) {
       swellPos(p, 0, scratch);
       p.x = scratch.x; p.y = scratch.y; p.vx = 0; p.vy = 0; p.lit = 0;
     }
-    if (reduced) { settle(); return; }
+    if (reduced) { settle(); stage.classList.add("ready"); return; }
     start = performance.now();
     last = start;
     raf = requestAnimationFrame(frame);
@@ -528,11 +732,16 @@
     shoreY = H * 0.8;
     sprites = sprites || makeSprites();
     backdrop = makeBackdrop();
+    buildStrands();
     build();
     run();
   }
 
   replayBtn.addEventListener("click", run);
+  stage.addEventListener("click", enter);
+  stage.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(); }
+  });
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
