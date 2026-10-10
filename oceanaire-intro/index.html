@@ -139,14 +139,14 @@
 </div>
 
 <p class="note">
-  Every droplet carries the position it will end up holding in the wordmark. The wave swells,
-  the crest breaks into whitewash, and on the drawback each droplet springs to the letter it
-  was always going to be part of. Click the stage and an offshore wind shreds the mark
-  downwind — all but the droplets that carry on into the corner and stand it back up, small,
-  where a site header would hold it. <b>Nothing is added and nothing is thrown away</b>: it is
-  the same water from the first frame to the last. Behind it the surface is drawn as long jagged
-  strands, straight run to straight run, kinking slightly at every vertex — the bends carry the
-  ripple and nothing is ever curved.
+  The mark is never drawn. The wave swells, the crest breaks into whitewash, and the sheet
+  runs in over everything — and then it leaves. Most of that water drains back out to sea;
+  what the mark holds stays behind. <b>The letters are what the water stopped covering</b>,
+  which is how a wave actually leaves a shape on a beach: by subtraction, not by drawing.
+  Click the stage and an offshore wind takes what is standing, all but the droplets that
+  carry on into the corner and set the mark up again, small, where a site header would hold
+  it. Behind it the surface is long jagged strands, straight run to straight run, kinking
+  slightly at every vertex — the bends carry the ripple and nothing is ever curved.
 </p>
 
 <script>
@@ -295,20 +295,27 @@
   function build() {
     const budget = W < 620 ? 2800 : W < 980 ? 4600 : 6800;
     const targets = sampleWordmark(budget, { fit: 0.9, cx: W / 2, cy: H * 0.44 });
+    // The wave carries more water than the mark keeps. The surplus is what
+    // drains back, and draining is what reveals the mark — it is left behind
+    // by water leaving, not built by water arriving.
+    const marks = targets.length / 2;
+    const surplus = Math.round(marks * 0.7);
     // The same mark again, small and in the corner — where it lands once the
     // wind has taken the big one. Same water, just less of it.
     const header = sampleWordmark(1500, { fit: 0.3, cx: W * 0.2, cy: H * 0.12 });
-    const n = targets.length / 2;
+    const n = marks + surplus;
     particles = new Array(n);
     for (let i = 0; i < n; i++) {
+      const held = i < marks;
       particles[i] = {
+        drains: !held,
         x: 0, y: 0, vx: 0, vy: 0,
-        tx: targets[i * 2], ty: targets[i * 2 + 1],
+        tx: held ? targets[i * 2] : 0, ty: held ? targets[i * 2 + 1] : 0,
         lane: Math.random(),
         thick: Math.pow(Math.random(), 0.7),
         seed: Math.random(),
         // Rank staggers the assembly left to right, so the mark writes itself.
-        rank: targets[i * 2] / W,
+        rank: held ? targets[i * 2] / W : Math.random(),
         size: 0.6 + Math.random() * 1.5,
         lit: 0,
         hx: 0, hy: 0, keeps: false,
@@ -318,8 +325,8 @@
     // Spread the survivors evenly through the cloud, so the corner mark is
     // drawn from the whole wordmark rather than from one corner of it.
     const keep = header.length / 2;
-    const stride = Math.max(1, Math.floor(n / keep));
-    for (let k = 0, i = 0; k < keep && i < n; k++, i += stride) {
+    const stride = Math.max(1, Math.floor(marks / keep));
+    for (let k = 0, i = 0; k < keep && i < marks; k++, i += stride) {
       particles[i].keeps = true;
       particles[i].hx = header[k * 2];
       particles[i].hy = header[k * 2 + 1];
@@ -351,6 +358,7 @@
     if (windAt >= 0) {
       const since = t - windAt;
       for (const p of particles) {
+        if (p.drains) continue;
         if (p.keeps) {
           // Caught by the gust first, then hauled back into the corner mark.
           const pull = 30 * ramp(since, 0.22 + p.seed * 0.3, 0.8);
@@ -405,9 +413,25 @@
     const g = forming ? 0 : 900;
 
     for (const p of particles) {
+      if (forming && p.drains) {
+        // The drawback: the sheet slides back out to sea, low and fast, and
+        // thins as it goes. Nothing here is aiming anywhere — it is just
+        // leaving, and what it stops covering is the mark.
+        const pull = 70 + 260 * ramp(t, WASH, 1.1);
+        p.vx += pull * (0.55 + p.seed * 0.9) * dt;
+        p.vy += 55 * dt;
+        p.vx *= Math.exp(-0.9 * dt);
+        p.vy *= Math.exp(-2.4 * dt);
+        p.lit *= Math.exp(-0.85 * dt);
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        continue;
+      }
+
       if (forming) {
-        // Springs engage left to right, so the mark assembles in reading order.
-        const k = 34 * ramp(t, WASH + p.rank * 0.85, 0.9);
+        // A short pull home, not a flight: the water is already lying over the
+        // mark by now, and only has to stop sliding where the mark holds it.
+        const k = 34 * ramp(t, WASH + p.rank * 0.5, 0.75);
         p.vx += (p.tx - p.x) * k * dt;
         p.vy += (p.ty - p.y) * k * dt;
         const damp = Math.exp(-7.5 * dt);
@@ -615,6 +639,7 @@
     // glows is a smear, so the mark tightens to ink as it stands and only
     // comes apart again once the wind has it.
     const sharpness = (p) => {
+      if (p.drains) return 0;
       if (windAt >= 0) return p.keeps ? 1 : clamp(1 - (t - windAt) / 0.4, 0, 1);
       return ramp(t, FORM - 0.4, 0.85);
     };
@@ -634,6 +659,9 @@
         let alpha = hardPass ? 0.55 + lit * 0.45 : 0.34 + lit * 0.5;
         if (windAt >= 0 && !p.keeps) {
           alpha *= clamp(1.25 - p.x / W, 0, 1);
+          if (alpha < 0.012) continue;
+        } else if (p.drains) {
+          alpha *= clamp(1.15 - p.x / W, 0, 1) * clamp(p.lit * 2.2, 0, 1);
           if (alpha < 0.012) continue;
         }
         if (sweep >= 0) {
@@ -695,6 +723,7 @@
     stage.classList.remove("ready");
     if (reduced) {
       for (const p of particles) {
+        if (p.drains) continue;
         if (p.keeps) { p.x = p.hx; p.y = p.hy; p.lit = 1; }
         else { p.lit = 0; p.x = W * 2; }
       }
