@@ -1,0 +1,555 @@
+<title>Ocean Air Intro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:wght@500;600&display=swap">
+
+<style>
+  /* Layout: one cinematic 16:9 stage, controls tucked under it, nothing else
+     competing. Committed single dark look — this is a title card, not a document. */
+  :root {
+    --ink: #04070c;          /* night water, the page ground */
+    --ink-2: #05080e;        /* stage floor, a shade off the page */
+    --sea: #1b3550;          /* body of the wave */
+    --foam: #eef4f6;         /* bone white, taken from the engraving */
+    --chrome: #9dc3ec;       /* the blue in the polished logo */
+      --rule: #1b242f;
+    --font-script: "Great Vibes", "Snell Roundhand", "Apple Chancery", cursive;
+    --font-roman: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--foam);
+    font-family: var(--font-roman);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding-block: 24px;
+    padding-inline: 16px;
+    box-sizing: border-box;
+    min-height: 100%;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 1180px;
+    aspect-ratio: 16 / 9;
+    max-width: min(1180px, calc((100vh - 170px) * 16 / 9));
+    position: relative;
+    border: 1px solid var(--rule);
+    background: var(--ink-2);
+    overflow: hidden;
+  }
+
+  .stage canvas { display: block; width: 100%; height: 100%; }
+
+  /* Lens vignette — keeps the eye in the middle and hides the lattice edges. */
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(2, 4, 8, 0.72) 100%);
+  }
+
+  .bar {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  button {
+    font-family: var(--font-roman);
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--foam);
+    background: transparent;
+    border: 1px solid var(--rule);
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  button:hover { border-color: var(--chrome); color: var(--chrome); }
+  button:focus-visible { outline: 2px solid var(--chrome); outline-offset: 3px; }
+
+  .phase {
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--chrome);
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+    min-width: 0;
+  }
+
+  .note {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #7e8d9c;
+    max-width: min(1180px, 62ch);
+  }
+  .note b { color: var(--foam); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    button { transition: none; }
+  }
+</style>
+
+<div class="stage">
+  <canvas id="stage" aria-label="A wave of droplets breaking and settling into the Ocean Air wordmark"></canvas>
+</div>
+
+<div class="bar">
+  <button id="replay" type="button">Replay</button>
+  <span class="phase" id="phase">Swell</span>
+</div>
+
+<p class="note">
+  Every droplet carries the position it will end up holding in the wordmark. The wave
+  swells, the crest breaks into whitewash, the sheet runs up the beach — and on the
+  drawback each droplet springs to the letter it was always going to be part of.
+  <b>Nothing is added and nothing is thrown away</b>; it is the same water the whole way through.
+</p>
+
+<script>
+(() => {
+  "use strict";
+
+  // Change these two and the whole intro re-forms around them.
+  const WORDMARK = "Ocean Air";
+  const SUBMARK  = "SPORTSWEAR";
+
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const phaseLabel = document.getElementById("phase");
+  const replayBtn = document.getElementById("replay");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Phase boundaries, in seconds.
+  const SWELL = 2.1, BREAK = 3.5, WASH = 5.3, FORM = 7.6;
+
+  let W = 0, H = 0, dpr = 1, shoreY = 0;
+  let particles = [];
+  let start = performance.now();
+  let raf = 0;
+  let sprites = null;
+  let backdrop = null;
+
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const ease = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+  // Smooth 0→1 ramp starting at `from`, over `span` seconds.
+  const ramp = (t, from, span) => {
+    const u = clamp((t - from) / span, 0, 1);
+    return u * u * (3 - 2 * u);
+  };
+
+  /* ---------------------------------------------------------------------
+     The wordmark, rasterised once and read back as a cloud of target points.
+     Drawing type and sampling its pixels beats hand-written path data: the
+     letterforms stay real type, and the droplet count follows the ink.
+  --------------------------------------------------------------------- */
+  function sampleWordmark(count) {
+    const off = document.createElement("canvas");
+    off.width = Math.round(W);
+    off.height = Math.round(H);
+    const c = off.getContext("2d");
+    c.fillStyle = "#fff";
+    c.strokeStyle = "#fff";
+
+    // In the mark the ring IS the O, so the script carries only what follows
+    // it — otherwise the lockup reads "OOcean".
+    const scriptText = WORDMARK.slice(1);
+
+    // Measure the whole lockup, then scale it to fit the stage. Fixed sizes
+    // clip the swash off the right edge the moment the wordmark gets longer.
+    const geom = (scale) => {
+      const ringR = H * 0.19 * scale;
+      const scriptSize = H * 0.4 * scale;
+      c.font = `${scriptSize}px "Great Vibes", cursive`;
+      const sw = c.measureText(scriptText).width;
+      const tail = W * 0.075;
+      // The script begins inside the ring's right edge, the way the mark laps them.
+      const width = ringR * 2 + ringR * 0.45 + sw + tail;
+      return { ringR, scriptSize, sw, tail, width };
+    };
+
+    let g = geom(1);
+    const room = W * 0.9;
+    if (g.width > room) g = geom(room / g.width);
+
+    const left = (W - g.width) / 2;
+    const ringX = left + g.ringR;
+    const ringY = H * 0.44;
+
+    c.lineWidth = Math.max(2, g.ringR * 0.15);
+    c.beginPath();
+    c.arc(ringX, ringY, g.ringR, 0, Math.PI * 2);
+    c.stroke();
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      c.beginPath();
+      c.arc(ringX + Math.cos(a) * g.ringR, ringY + Math.sin(a) * g.ringR, g.ringR * 0.062, 0, Math.PI * 2);
+      c.fill();
+    }
+
+    c.font = `${g.scriptSize}px "Great Vibes", cursive`;
+    c.textBaseline = "alphabetic";
+    const scriptX = ringX + g.ringR * 0.45;
+    const scriptY = ringY + g.scriptSize * 0.3;
+    c.fillText(scriptText, scriptX, scriptY);
+
+    // The swash: a long tapering rule running off the final letter.
+    const tailY = scriptY + H * 0.012;
+    c.lineWidth = Math.max(1.5, H * 0.012);
+    c.beginPath();
+    c.moveTo(scriptX + g.sw * 0.84, tailY);
+    c.lineTo(scriptX + g.sw + g.tail, tailY);
+    c.stroke();
+
+    // SPORTSWEAR, tracked out by hand so the spacing is exact.
+    const subSize = Math.max(10, g.scriptSize * 0.2);
+    c.font = `600 ${subSize}px "Cormorant Garamond", Georgia, serif`;
+    const track = subSize * 0.44;
+    let subW = -track;
+    for (const ch of SUBMARK) subW += c.measureText(ch).width + track;
+    let sx = scriptX + g.sw * 0.5 - subW * 0.5;
+    const sy = scriptY + subSize * 1.45;
+    for (const ch of SUBMARK) {
+      c.fillText(ch, sx, sy);
+      sx += c.measureText(ch).width + track;
+    }
+
+    // Read the ink back as points.
+    const data = c.getImageData(0, 0, off.width, off.height).data;
+    const step = Math.max(2, Math.round(H / 200));
+    const found = [];
+    for (let y = 0; y < off.height; y += step) {
+      for (let x = 0; x < off.width; x += step) {
+        if (data[(y * off.width + x) * 4 + 3] > 130) found.push(x, y);
+      }
+    }
+
+    // Shuffle so thinning the cloud stays even across the mark.
+    const n = found.length / 2;
+    const order = new Int32Array(n);
+    for (let i = 0; i < n; i++) order[i] = i;
+    for (let i = n - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      const t = order[i]; order[i] = order[j]; order[j] = t;
+    }
+
+    const take = Math.min(count, n);
+    const out = new Float32Array(take * 2);
+    for (let i = 0; i < take; i++) {
+      out[i * 2] = found[order[i] * 2];
+      out[i * 2 + 1] = found[order[i] * 2 + 1];
+    }
+    return out;
+  }
+
+  /* ---------------------------------------------------------------------
+     Droplets. Each one is given its place in the wordmark up front, then
+     spends the whole sequence travelling to it.
+  --------------------------------------------------------------------- */
+  function build() {
+    const budget = W < 620 ? 2000 : W < 980 ? 3200 : 4600;
+    const targets = sampleWordmark(budget);
+    const n = targets.length / 2;
+    particles = new Array(n);
+    for (let i = 0; i < n; i++) {
+      particles[i] = {
+        x: 0, y: 0, vx: 0, vy: 0,
+        tx: targets[i * 2], ty: targets[i * 2 + 1],
+        lane: Math.random(),
+        thick: Math.pow(Math.random(), 0.7),
+        seed: Math.random(),
+        // Rank staggers the assembly left to right, so the mark writes itself.
+        rank: targets[i * 2] / W,
+        size: 0.6 + Math.random() * 1.5,
+        lit: 0,
+      };
+    }
+  }
+
+  /** Where a droplet rides while the swell is still whole. */
+  function swellPos(p, t, out) {
+    const crestX = W * 1.35 + (W * 0.5 - W * 1.35) * ease(t / SWELL);
+    const x = crestX + (p.lane - 0.5) * W * 1.05;
+    const d = (x - crestX) / (W * 0.24);
+    const hump = Math.exp(-d * d * 1.3);
+    const face = 1 / (1 + Math.exp(d * 5.5));          // steeper on the leading side
+    const amp = H * 0.3 * ease(t / 1.7);
+    const surface = shoreY - amp * (hump * 0.9 + face * 0.32);
+    // Water moves in circles, not in lines — the orbit is what makes it read as a swell.
+    const orbit = (1 - p.thick) * H * 0.035 + H * 0.008;
+    const a = t * 2.3 + p.seed * Math.PI * 2;
+    out.x = x + Math.cos(a) * orbit;
+    out.y = surface + p.thick * H * 0.26 + Math.sin(a) * orbit * 0.5;
+    out.crest = hump * (1 - p.thick);
+    return out;
+  }
+
+  const scratch = { x: 0, y: 0, crest: 0 };
+  let broke = false;
+
+  function update(dt, t) {
+    if (t < BREAK) {
+      // Kinematic while the wave is intact: the shape is art-directed, so it
+      // always reads as a wave instead of hoping a simulation behaves.
+      for (const p of particles) {
+        swellPos(p, Math.min(t, SWELL), scratch);
+        p.vx = (scratch.x - p.x) / dt;
+        p.vy = (scratch.y - p.y) / dt;
+        p.x = scratch.x;
+        p.y = scratch.y;
+        p.crest = scratch.crest;
+        p.lit = clamp(scratch.crest * 1.1, 0, 1);
+      }
+      return;
+    }
+
+    if (!broke) {
+      broke = true;
+      // The crest throws itself forward; the body underneath barely moves.
+      for (const p of particles) {
+        const c = p.crest || 0;
+        p.vx += -(90 + 560 * c) * (0.6 + Math.random() * 0.8);
+        p.vy += -(70 + 640 * c) * (0.35 + Math.random() * 1.0);
+      }
+    }
+
+    const forming = t > WASH;
+    const g = forming ? 0 : 900;
+
+    for (const p of particles) {
+      if (forming) {
+        // Springs engage left to right, so the mark assembles in reading order.
+        const k = 34 * ramp(t, WASH + p.rank * 0.85, 0.9);
+        p.vx += (p.tx - p.x) * k * dt;
+        p.vy += (p.ty - p.y) * k * dt;
+        const damp = Math.exp(-7.5 * dt);
+        p.vx *= damp;
+        p.vy *= damp;
+        if (t > FORM) {
+          // Held, but never quite still — standing water keeps trembling.
+          const a = t * 1.6 + p.seed * 9.0;
+          p.x += Math.cos(a) * 0.09;
+          p.y += Math.sin(a * 1.3) * 0.09;
+        }
+      } else {
+        p.vy += g * dt;
+        const drag = Math.exp(-0.55 * dt);
+        p.vx *= drag;
+        p.vy *= drag;
+      }
+
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      // The line. Droplets break against it, lose most of their fall, and run along it.
+      if (!forming && p.y > shoreY) {
+        p.y = shoreY - (p.y - shoreY) * 0.18;
+        p.vy *= -0.2;
+        p.vx *= 0.9;
+      }
+
+      const speed = Math.hypot(p.vx, p.vy);
+      const want = forming ? clamp(1 - speed / 420, 0, 1) : clamp(speed / 520, 0, 1);
+      p.lit += (want - p.lit) * clamp(dt * 6, 0, 1);
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Drawing. Droplets are pre-rendered sprites blended additively, which is
+     what gives whitewash its glow without a thousand gradients per frame.
+  --------------------------------------------------------------------- */
+  function makeSprites() {
+    const make = (rgb) => {
+      const s = document.createElement("canvas");
+      const r = 16;
+      s.width = s.height = r * 2;
+      const c = s.getContext("2d");
+      const grad = c.createRadialGradient(r, r, 0, r, r, r);
+      grad.addColorStop(0, `rgba(${rgb},1)`);
+      grad.addColorStop(0.35, `rgba(${rgb},0.5)`);
+      grad.addColorStop(1, `rgba(${rgb},0)`);
+      c.fillStyle = grad;
+      c.fillRect(0, 0, r * 2, r * 2);
+      return s;
+    };
+    return {
+      sea: make("46,74,102"),
+      mid: make("130,170,204"),
+      foam: make("238,246,250"),
+    };
+  }
+
+  /**
+   * No horizon, no moon, no sand. The scene is abstract on purpose: a dark
+   * ground, a breath of cold light where the energy gathers, and one hairline
+   * for the droplets to break against. Scenery would turn a title card into an
+   * illustration of a beach, and the wave reads as a wave from motion alone.
+   */
+  function makeBackdrop() {
+    const b = document.createElement("canvas");
+    b.width = Math.round(W);
+    b.height = Math.round(H);
+    const c = b.getContext("2d");
+
+    const ground = c.createLinearGradient(0, 0, 0, H);
+    ground.addColorStop(0, "#04060a");
+    ground.addColorStop(0.55, "#070c13");
+    ground.addColorStop(1, "#03050a");
+    c.fillStyle = ground;
+    c.fillRect(0, 0, W, H);
+
+    // A cold wash low and right, where the swell comes in from.
+    const wash = c.createRadialGradient(W * 0.72, shoreY - H * 0.1, 0, W * 0.72, shoreY - H * 0.1, W * 0.6);
+    wash.addColorStop(0, "rgba(96,150,200,0.1)");
+    wash.addColorStop(1, "rgba(96,150,200,0)");
+    c.fillStyle = wash;
+    c.fillRect(0, 0, W, H);
+
+    // Engraver's hatching, kept to a whisper — texture, not scenery.
+    c.strokeStyle = "rgba(150,190,222,0.03)";
+    c.lineWidth = 1;
+    for (let y = 0; y < H; y += 3) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(W, y + 0.5);
+      c.stroke();
+    }
+
+    // The one graphic element: a hairline the whitewash runs along.
+    const rule = c.createLinearGradient(0, 0, W, 0);
+    rule.addColorStop(0, "rgba(170,205,235,0)");
+    rule.addColorStop(0.5, "rgba(170,205,235,0.22)");
+    rule.addColorStop(1, "rgba(170,205,235,0)");
+    c.strokeStyle = rule;
+    c.beginPath();
+    c.moveTo(0, shoreY + 0.5);
+    c.lineTo(W, shoreY + 0.5);
+    c.stroke();
+
+    return b;
+  }
+
+  function draw(t) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(backdrop, 0, 0, W, H);
+
+    // A slow chrome sweep once the mark is held, so the logo catches light.
+    const sweep = t > FORM ? ((t - FORM) * 0.42) % 2.6 : -1;
+    const sweepX = sweep >= 0 ? (sweep / 2.6) * (W * 1.4) - W * 0.2 : -9999;
+
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of particles) {
+      const lit = p.lit;
+      const sprite = lit > 0.62 ? sprites.foam : lit > 0.3 ? sprites.mid : sprites.sea;
+      let r = p.size * (1.9 + lit * 2.1);
+      let alpha = 0.34 + lit * 0.5;
+      if (sweep >= 0) {
+        const d = Math.abs(p.x - sweepX) / (W * 0.1);
+        if (d < 1) {
+          const hit = (1 - d) * (1 - d);
+          alpha = Math.min(1, alpha + hit * 0.75);
+          r += hit * 1.7;
+        }
+      }
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function label(t) {
+    const name = t < SWELL ? "Swell" : t < BREAK ? "Break" : t < WASH ? "Whitewash" : t < FORM ? "Drawback" : "Ocean Air";
+    if (phaseLabel.textContent !== name) phaseLabel.textContent = name;
+  }
+
+  /** Jump straight to the held mark — the resting state, and what reduced motion gets. */
+  function settle() {
+    for (const p of particles) {
+      p.x = p.tx; p.y = p.ty; p.vx = 0; p.vy = 0; p.lit = 1;
+    }
+    draw(FORM + 0.01);
+    label(FORM + 1);
+  }
+
+  let last = 0;
+  function frame(now) {
+    const t = (now - start) / 1000;
+    let dt = (now - last) / 1000;
+    last = now;
+    if (!(dt > 0) || dt > 0.05) dt = 1 / 60;   // first frame, or a tab coming back
+    update(dt, t);
+    draw(t);
+    label(t);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function run() {
+    cancelAnimationFrame(raf);
+    broke = false;
+    for (const p of particles) {
+      swellPos(p, 0, scratch);
+      p.x = scratch.x; p.y = scratch.y; p.vx = 0; p.vy = 0; p.lit = 0;
+    }
+    if (reduced) { settle(); return; }
+    start = performance.now();
+    last = start;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 2) return;
+    dpr = Math.min(1.6, window.devicePixelRatio || 1);
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    shoreY = H * 0.8;
+    sprites = sprites || makeSprites();
+    backdrop = makeBackdrop();
+    build();
+    run();
+  }
+
+  replayBtn.addEventListener("click", run);
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 180);
+  });
+
+  // The script face has to be loaded before the mark is rasterised, or the
+  // droplets take the shape of the fallback and never correct themselves.
+  const boot = () => resize();
+  if (document.fonts && document.fonts.load) {
+    Promise.all([
+      document.fonts.load('100px "Great Vibes"'),
+      document.fonts.load('600 40px "Cormorant Garamond"'),
+    ]).then(boot, boot);
+  } else {
+    boot();
+  }
+})();
+</script>
