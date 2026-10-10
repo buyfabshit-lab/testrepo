@@ -1,0 +1,260 @@
+<title>Ocean Aire Title Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap">
+
+<style>
+  /* Layout: the 3D render fills a 16:9 stage, the line work rides over it on a
+     transparent canvas, controls sit underneath. Committed single dark look. */
+  :root {
+    --ink: #050506;
+    --ink-2: #070708;
+    --foam: #f0f4f3;
+    --silver: #b9bebc;
+    --rule: #1d1f20;
+    --font-roman: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--foam);
+    font-family: var(--font-roman);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding-block: 24px;
+    padding-inline: 16px;
+    box-sizing: border-box;
+    min-height: 100%;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: min(1180px, calc((100vh - 170px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--rule);
+    background: var(--ink-2);
+    overflow: hidden;
+  }
+
+  /* The render underneath, and the line work over it. */
+  .stage video,
+  .stage canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .stage video {
+    object-fit: cover;
+    filter: contrast(1.32) brightness(1.12);
+  }
+  .stage canvas { pointer-events: none; }
+
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 46%, transparent 44%, rgba(3, 3, 4, 0.7) 100%);
+  }
+
+  .bar {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  button {
+    font-family: var(--font-roman);
+    font-size: 14px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--foam);
+    background: transparent;
+    border: 1px solid var(--rule);
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+  button:hover { border-color: var(--silver); color: var(--silver); }
+  button:focus-visible { outline: 2px solid var(--silver); outline-offset: 3px; }
+  button[aria-pressed="true"] { border-color: var(--foam); }
+
+  .note {
+    width: 100%;
+    max-width: min(1180px, 62ch);
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #7e8d9c;
+  }
+  .note b { color: var(--foam); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    button { transition: none; }
+  }
+</style>
+
+<div class="stage">
+  <video id="plate" muted loop playsinline autoplay
+         aria-label="Ocean Aire rendered in three dimensions, emerging from fog">
+    <!-- Two codecs on purpose: H.264 is the one every browser plays, but open
+         builds of Chromium ship without it, and those fall through to VP9. -->
+    <source src="media/aire-3d.webm" type="video/webm">
+    <source src="media/aire-3d.mp4" type="video/mp4">
+  </video>
+  <canvas id="lines" aria-hidden="true"></canvas>
+</div>
+
+<div class="bar">
+  <button id="replay" type="button">Replay</button>
+  <button id="toggle" type="button" aria-pressed="true">Lines on</button>
+</div>
+
+<p class="note">
+  Your 3D render underneath, with the water drawn over it as transparent white line work: long jagged strands, straight run to straight run, kinking slightly at every vertex. The
+  bends carry the ripple and <b>nothing is ever curved</b>. The lines are lit by their own
+  slope, so a strand brightens where it climbs hardest and all but disappears where it runs
+  flat, which keeps the overlay off the letterforms instead of across them.
+</p>
+
+<script>
+(() => {
+  "use strict";
+
+  const stage = document.querySelector(".stage");
+  const video = document.getElementById("plate");
+  const canvas = document.getElementById("lines");
+  const ctx = canvas.getContext("2d");           // transparent: the render shows through
+  const replayBtn = document.getElementById("replay");
+  const toggleBtn = document.getElementById("toggle");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let W = 0, H = 0, dpr = 1, strands = null, raf = 0, on = true;
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+  function buildStrands() {
+    const gap = Math.max(20, H / 28);
+    const seg = Math.max(40, W / 22);
+    const rows = Math.ceil(H / gap) + 2;
+    const cols = Math.ceil(W / seg) + 2;
+    // Fixed per vertex, so a strand keeps its own character instead of
+    // shimmering randomly from frame to frame.
+    const kink = new Float32Array(rows * cols);
+    for (let i = 0; i < kink.length; i++) kink[i] = (Math.random() - 0.5) * gap * 0.55;
+    strands = { gap, seg, rows, cols, kink };
+  }
+
+  /** Three crossing swells plus one spreading ring. */
+  function height(x, y, t) {
+    const a = Math.sin((x * 0.0115 + y * 0.004) + t * 1.15);
+    const b = Math.sin((x * -0.0062 + y * 0.0135) - t * 0.82);
+    const c = Math.sin((x * 0.0042 + y * -0.0071) + t * 1.55);
+    const dx = x - W * 0.72, dy = (y - H * 0.6) * 1.8;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const ring = Math.sin(d * 0.022 - t * 2.1) * Math.exp(-d / (W * 0.55));
+    return a * 0.4 + b * 0.32 + c * 0.2 + ring * 0.42;
+  }
+
+  function drawLines(t) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    if (!on || !strands) return;
+
+    const { gap, seg, rows, cols, kink } = strands;
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+
+    for (let r = 0; r < rows; r++) {
+      const baseY = (r - 0.5) * gap;
+      const depth = clamp(baseY / H, 0, 1);
+      const amp = gap * (0.5 + depth * 1.25);
+
+      let prevY = 0;
+      let steepest = 0;
+      ctx.beginPath();
+      for (let c = 0; c < cols; c++) {
+        const x = (c - 0.5) * seg;
+        const y = baseY + height(x, baseY, t) * amp + kink[r * cols + c];
+        if (c === 0) ctx.moveTo(x, y);
+        else {
+          ctx.lineTo(x, y);
+          const slope = Math.abs(y - prevY) / seg;
+          if (slope > steepest) steepest = slope;
+        }
+        prevY = y;
+      }
+
+      // A strand brightens where it is climbing hardest and nearly vanishes
+      // where it runs flat. Over a render that keeps the overlay off the
+      // letterforms rather than laid straight across them.
+      const lit = clamp(steepest * 1.5, 0, 1);
+      const alpha = 0.05 + depth * 0.09 + lit * 0.26;
+      ctx.strokeStyle = `rgba(244,248,247,${alpha})`;
+      ctx.lineWidth = 1 + lit * 1.1;
+      ctx.stroke();
+    }
+  }
+
+  function frame(now) {
+    drawLines(now / 1000);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    const rect = stage.getBoundingClientRect();
+    if (rect.width < 2) return;
+    dpr = Math.min(1.6, window.devicePixelRatio || 1);
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    buildStrands();
+    drawLines(reduced ? 0 : performance.now() / 1000);
+  }
+
+  replayBtn.addEventListener("click", () => {
+    try {
+      video.currentTime = 0;
+      void video.play();
+    } catch { /* a browser that refuses the seek still has the loop running */ }
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    on = !on;
+    toggleBtn.textContent = on ? "Lines on" : "Lines off";
+    toggleBtn.setAttribute("aria-pressed", String(on));
+    if (!on || reduced) drawLines(performance.now() / 1000);
+  });
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 160);
+  });
+
+  resize();
+  if (reduced) {
+    video.pause();
+  } else {
+    raf = requestAnimationFrame(frame);
+    // Autoplay is permitted while muted, but some views still refuse it.
+    const kick = () => { void video.play().catch(() => {}); };
+    kick();
+    stage.addEventListener("click", kick, { once: true });
+  }
+  void raf;
+})();
+</script>
