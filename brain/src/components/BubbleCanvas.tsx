@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent }
 import type { Thought } from "../lib/types";
 import type { Graph } from "../lib/graph";
 import type { Layout } from "../hooks/useLayout";
+import FieldCanvas from "./FieldCanvas";
 
 export type Camera = { x: number; y: number; scale: number };
 
@@ -37,6 +38,12 @@ export default function BubbleCanvas({
   pendingIds,
   arrivedIds,
 }: Props) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  // Direction of the key light, as a unit-ish vector in screen space. The
+  // pointer carries it, so moving the mouse sweeps the highlights across every
+  // sphere at once — one distant source, the way a sun would behave.
+  const [light, setLight] = useState({ x: -0.42, y: -0.58 });
+  const lightFrame = useRef(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 1200, h: 800 });
   const gesture = useRef<
@@ -46,7 +53,7 @@ export default function BubbleCanvas({
   >(null);
 
   useEffect(() => {
-    const element = svgRef.current;
+    const element = hostRef.current;
     if (!element) return;
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
@@ -68,6 +75,21 @@ export default function BubbleCanvas({
     },
     [camera],
   );
+
+  /** Quantised and rAF-gated: a light this smooth is not worth a re-render per pixel. */
+  const moveLight = (clientX: number, clientY: number) => {
+    if (lightFrame.current) return;
+    lightFrame.current = requestAnimationFrame(() => {
+      lightFrame.current = 0;
+      const rect = hostRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const nx = Math.round((((clientX - rect.left) / rect.width) * 2 - 1) * 20) / 20;
+      const ny = Math.round((((clientY - rect.top) / rect.height) * 2 - 1) * 20) / 20;
+      setLight((current) => (current.x === nx && current.y === ny ? current : { x: nx, y: ny }));
+    });
+  };
+
+  useEffect(() => () => cancelAnimationFrame(lightFrame.current), []);
 
   const onWheel = (event: ReactWheelEvent<SVGSVGElement>) => {
     const factor = Math.exp(-event.deltaY * 0.0015);
@@ -99,6 +121,7 @@ export default function BubbleCanvas({
   };
 
   const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    moveLight(event.clientX, event.clientY);
     const active = gesture.current;
     if (!active) return;
     if (active.type === "pan") {
@@ -147,21 +170,34 @@ export default function BubbleCanvas({
     return 1;
   };
 
+  // Painter's algorithm: lower bubbles are nearer, so they paint last and
+  // overlap the ones above them. Without it the overlaps contradict the
+  // lighting and the spheres flatten back into discs.
+  const depthSorted = [...thoughts].sort((a, b) => {
+    const ya = layout.bodies.get(a.id)?.y ?? 0;
+    const yb = layout.bodies.get(b.id)?.y ?? 0;
+    return ya - yb;
+  });
+
   return (
-    <svg
-      ref={svgRef}
-      className="canvas-surface absolute inset-0 h-full w-full"
-      onWheel={onWheel}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
+    <div ref={hostRef} className="absolute inset-0 overflow-hidden bg-void">
+      <FieldCanvas
+        bodies={[...layout.bodies.values()]}
+        hueOf={graph.hueOf}
+        camera={camera}
+        width={size.w}
+        height={size.h}
+      />
+      <svg
+        ref={svgRef}
+        className="canvas-surface absolute inset-0 h-full w-full"
+        onWheel={onWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
       <defs>
-        <radialGradient id="vignette" cx="50%" cy="45%" r="75%">
-          <stop offset="0%" stopColor="#12121f" />
-          <stop offset="100%" stopColor="#07070c" />
-        </radialGradient>
         <filter id="glow" x="-70%" y="-70%" width="240%" height="240%">
           <feGaussianBlur stdDeviation="9" result="blur" />
           <feMerge>
@@ -169,9 +205,79 @@ export default function BubbleCanvas({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-      </defs>
 
-      <rect width="100%" height="100%" fill="url(#vignette)" />
+        {/*
+          Three shared gradients turn a flat disc into a lit sphere, and they
+          are shared on purpose: hue stays on the circle underneath, so one set
+          of defs shades every bubble on the canvas whatever colour it is, and
+          no bubble needs a filter of its own.
+        */}
+        <radialGradient
+          id="sphere-shade"
+          cx={`${50 + light.x * 24}%`}
+          cy={`${50 + light.y * 24}%`}
+          r="78%"
+        >
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.30" />
+          <stop offset="36%" stopColor="#ffffff" stopOpacity="0.05" />
+          <stop offset="74%" stopColor="#000000" stopOpacity="0.14" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0.44" />
+        </radialGradient>
+        {/* Light bouncing back off the field on the far side, which is what
+            stops the underside reading as a hole rather than a curve. */}
+        <radialGradient
+          id="sphere-bounce"
+          cx={`${50 - light.x * 30}%`}
+          cy={`${50 - light.y * 30}%`}
+          r="48%"
+        >
+          <stop offset="0%" stopColor="#cfe4ff" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#cfe4ff" stopOpacity="0" />
+        </radialGradient>
+        {/* A chrome bevel: the rim runs hot where it faces the light and goes
+            almost black on the far side. On a polished sphere this edge does
+            more work than the body does. */}
+        <linearGradient
+          id="rim-chrome"
+          x1={`${50 + light.x * 50}%`}
+          y1={`${50 + light.y * 50}%`}
+          x2={`${50 - light.x * 50}%`}
+          y2={`${50 - light.y * 50}%`}
+        >
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
+          <stop offset="34%" stopColor="#dbe8ff" stopOpacity="0.72" />
+          <stop offset="68%" stopColor="#2b3350" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#05060d" stopOpacity="0.85" />
+        </linearGradient>
+        {/* The reflected horizon — the hard light/dark split a polished surface
+            picks up from its surroundings. */}
+        <linearGradient
+          id="sphere-horizon"
+          x1={`${50 + light.x * 50}%`}
+          y1={`${50 + light.y * 50}%`}
+          x2={`${50 - light.x * 50}%`}
+          y2={`${50 - light.y * 50}%`}
+        >
+          <stop offset="0%" stopColor="#eaf3ff" stopOpacity="0.3" />
+          <stop offset="38%" stopColor="#eaf3ff" stopOpacity="0.04" />
+          <stop offset="47%" stopColor="#000713" stopOpacity="0.1" />
+          <stop offset="48%" stopColor="#9fc4ff" stopOpacity="0.2" />
+          <stop offset="56%" stopColor="#000713" stopOpacity="0.14" />
+          <stop offset="100%" stopColor="#000713" stopOpacity="0.34" />
+        </linearGradient>
+        <radialGradient id="sphere-specular" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="38%" stopColor="#ffffff" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
+        {/* A gradient rather than a blur filter: same soft edge, a fraction of
+            the cost once there are a couple of hundred of them. */}
+        <radialGradient id="sphere-shadow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#000000" stopOpacity="0.5" />
+          <stop offset="62%" stopColor="#000000" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+        </radialGradient>
+      </defs>
 
       <g
         transform={`translate(${size.w / 2} ${size.h / 2}) scale(${camera.scale}) translate(${-camera.x} ${-camera.y})`}
@@ -207,14 +313,14 @@ export default function BubbleCanvas({
               y1={a.y}
               x2={b.x}
               y2={b.y}
-              stroke={lit ? "#6f6f9a" : "#3a3a52"}
-              strokeWidth={0.5 + link.weight * 2.2}
-              opacity={lit ? 0.16 + link.weight * 0.4 : 0.05}
+              stroke={lit ? "#8e9ad6" : "#39405c"}
+              strokeWidth={0.4 + link.weight * 1.3}
+              opacity={lit ? 0.07 + link.weight * 0.17 : 0.03}
             />
           );
         })}
 
-        {thoughts.map((thought) => {
+        {depthSorted.map((thought) => {
           const body = layout.bodies.get(thought.id);
           if (!body) return null;
           const hue = graph.hueOf.get(thought.id) ?? 210;
@@ -248,11 +354,61 @@ export default function BubbleCanvas({
                   opacity={0.9}
                 />
               )}
+              {/* Cast shadow, thrown away from the light and biased downward
+                  so a bubble still reads as sitting in the field, not floating
+                  free of it. */}
+              <circle
+                cx={-light.x * body.r * 0.26}
+                cy={-light.y * body.r * 0.26 + body.r * 0.18}
+                r={body.r * 1.14}
+                fill="url(#sphere-shadow)"
+                opacity={0.5}
+              />
+              {/* Glass, not paint: the body colour is translucent, so the
+                  lattice behind carries straight through the sphere and the
+                  field stays the thing everything is sitting in. */}
               <circle
                 r={body.r}
-                fill={`hsl(${hue} ${isLit || isSelected ? 55 : 42}% ${isLit || isSelected ? 26 : 17}%)`}
-                stroke={`hsl(${hue} 70% ${isSelected ? 76 : 58}%)`}
-                strokeWidth={isSelected ? 2 : 1.2}
+                fill={`hsl(${hue} ${isLit || isSelected ? 80 : 68}% ${isLit || isSelected ? 54 : 46}%)`}
+                fillOpacity={isLit || isSelected ? 0.44 : 0.3}
+              />
+              <circle r={body.r} fill="url(#sphere-shade)" />
+              <circle r={body.r} fill="url(#sphere-horizon)" />
+              <circle r={body.r} fill="url(#sphere-bounce)" />
+              {/* Specular: small and hard, sitting on the side facing the light. */}
+              <ellipse
+                cx={light.x * body.r * 0.46}
+                cy={light.y * body.r * 0.46}
+                rx={body.r * 0.2}
+                ry={body.r * 0.15}
+                fill="url(#sphere-specular)"
+                transform={`rotate(${(Math.atan2(light.y, light.x) * 180) / Math.PI})`}
+                opacity={0.9}
+              />
+              {/* Two rings make the edge read as thickness rather than outline:
+                  a dark inner wall, then the polished bevel over it. */}
+              <circle
+                r={body.r - 2.2}
+                fill="none"
+                stroke="#05060d"
+                strokeWidth={1.6}
+                opacity={0.45}
+              />
+              <circle
+                r={body.r - 0.8}
+                fill="none"
+                stroke="url(#rim-chrome)"
+                strokeWidth={isSelected ? 3 : 2}
+                opacity={isSelected || isLit ? 1 : 0.8}
+              />
+              {/* A hue-tinted ring keeps each constellation identifiable once
+                  the chrome has drained the colour out of the edge. */}
+              <circle
+                r={body.r}
+                fill="none"
+                stroke={`hsl(${hue} 90% ${isSelected ? 82 : 68}%)`}
+                strokeWidth={isSelected ? 1.6 : 1}
+                opacity={isSelected || isLit ? 0.95 : 0.5}
               />
               {thought.pinned && (
                 <circle cx={0} cy={-body.r + 7} r={3} fill={`hsl(${hue} 90% 78%)`} />
@@ -261,8 +417,9 @@ export default function BubbleCanvas({
             </g>
           );
         })}
-      </g>
-    </svg>
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -302,7 +459,14 @@ function BubbleLabel({ title, r, hue }: { title: string; r: number; hue: number 
       textAnchor="middle"
       fontSize={fontSize}
       fontWeight={600}
-      fill={`hsl(${hue} 45% 92%)`}
+      fill={`hsl(${hue} 40% 95%)`}
+      // Drawn under the fill, this keeps a label readable wherever it lands —
+      // over its own glass, over the field, or over the bubble behind it.
+      stroke="#05050a"
+      strokeWidth={2.4}
+      strokeOpacity={0.6}
+      strokeLinejoin="round"
+      paintOrder="stroke"
       style={{ pointerEvents: "none", userSelect: "none" }}
     >
       {rendered.map((text, index) => (
