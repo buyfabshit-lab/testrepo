@@ -1,0 +1,269 @@
+<title>Death Corps Lookbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=Archivo:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
+
+<style>
+  /* Layout: a surplus-crate index card. Full-bleed dark ground, designs on a
+     responsive grid, each one carrying its real production numbers rather than
+     a caption. Committed single dark look — this is a merch board. */
+  :root {
+    --ground: #0a0a09;        /* crate black, warmed off pure */
+    --panel: #121210;
+    --edge: #26261f;
+    --bone: #e7e2d4;          /* the off-white in every one of these designs */
+    --olive: #6d7352;         /* the camo field */
+    --blood: #9e1b14;         /* the drip red, held back for emphasis only */
+    --dim: #8c887a;
+    --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+    --font-body: Archivo, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "Space Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--bone);
+    font-family: var(--font-body);
+    padding-block: 32px 56px;
+    padding-inline: 16px;
+  }
+
+  .wrap { max-width: 1120px; margin-inline: auto; }
+
+  header { border-bottom: 1px solid var(--edge); padding-bottom: 20px; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.6rem, 9vw, 5.2rem);
+    line-height: 0.86;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .sub {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--olive);
+    margin: 12px 0 0;
+  }
+
+  .lede {
+    max-width: 62ch;
+    margin: 22px 0 0;
+    font-size: 0.97rem;
+    line-height: 1.65;
+    color: var(--dim);
+  }
+  .lede b { color: var(--bone); font-weight: 600; }
+
+  .grid {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 28px;
+  }
+
+  figure {
+    margin: 0;
+    min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+  }
+
+  .plate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background:
+      repeating-linear-gradient(135deg, #0e0e0c 0 7px, #111110 7px 14px);
+  }
+  .plate img { max-width: 100%; height: auto; display: block; }
+
+  figcaption { padding: 14px 16px 16px; border-top: 1px solid var(--edge); }
+
+  .name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.22rem;
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .motif {
+    font-size: 0.82rem;
+    color: var(--dim);
+    margin-top: 5px;
+    line-height: 1.45;
+  }
+
+  dl {
+    margin: 12px 0 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-variant-numeric: tabular-nums;
+  }
+  dt { color: var(--olive); text-transform: uppercase; letter-spacing: 0.1em; }
+  dd { margin: 0; color: var(--bone); }
+  dd.short { color: var(--blood); }
+
+  .warn {
+    margin-top: 44px;
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--blood);
+    padding: 18px 20px;
+    background: var(--panel);
+  }
+  .warn h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1.3rem;
+    letter-spacing: 0.03em;
+    margin: 0 0 10px;
+  }
+  .warn p { margin: 0 0 10px; font-size: 0.93rem; line-height: 1.62; color: var(--dim); }
+  .warn p:last-child { margin-bottom: 0; }
+  .warn b, .warn code { color: var(--bone); }
+  .warn code { font-family: var(--font-mono); font-size: 0.85em; }
+
+  table {
+    margin-top: 14px;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+  }
+  th, td { text-align: left; padding: 5px 14px 5px 0; border-bottom: 1px solid var(--edge); }
+  th { color: var(--olive); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 400; }
+  .scroll { overflow-x: auto; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Death Corps</h1>
+    <p class="sub">California Destroyers · Six marks</p>
+    <p class="lede">
+      Sliced out of the contact sheet at native resolution and trimmed to the art, so each
+      mark is its own asset. They read as one family: camo ground, aged print, bone and blood
+      on near-black, the <b>666</b>, the <b>DC</b> monogram, and the CALIFORNIA DESTROYERS
+      banner carrying the bottom of nearly every one.
+    </p>
+  </header>
+
+  <div class="grid">
+    <figure>
+      <div class="plate"><img src="art/design-0.png" alt="Three snarling Malinois over a 666 helmet on a shield, Death Corps in dripping blackletter" width="476" height="598"></div>
+      <figcaption>
+        <div class="name">Three Dogs, Helmet</div>
+        <p class="motif">Dripping blackletter, Malinois trio, DC helmet. The strongest of the six.</p>
+        <dl>
+          <dt>Shape</dt><dd>Shield</dd>
+          <dt>Pixels</dt><dd>476 × 598</dd>
+          <dt>300 dpi</dt><dd class="short">1.59″ × 1.99″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="plate"><img src="art/design-1.png" alt="Death Squad FTW 666 in condensed metal type on a camo circle" width="500" height="547"></div>
+      <figcaption>
+        <div class="name">Squad FTW</div>
+        <p class="motif">Type-only. Condensed metal caps, bolts, two small skulls.</p>
+        <dl>
+          <dt>Shape</dt><dd>Circle</dd>
+          <dt>Pixels</dt><dd>500 × 547</dd>
+          <dt>300 dpi</dt><dd class="short">1.67″ × 1.82″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="plate"><img src="art/design-2.png" alt="Armoured knight with axe and DC shield standing on skulls, Death Corps banner" width="484" height="583"></div>
+      <figcaption>
+        <div class="name">Knight on Skulls</div>
+        <p class="motif">The outlier: white blast ground instead of camo.</p>
+        <dl>
+          <dt>Shape</dt><dd>Free</dd>
+          <dt>Pixels</dt><dd>484 × 583</dd>
+          <dt>300 dpi</dt><dd class="short">1.61″ × 1.94″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="plate"><img src="art/design-3.png" alt="Helmeted skull in laurels with crossed axes and rifles, ACAB in blackletter" width="494" height="500"></div>
+      <figcaption>
+        <div class="name">Helmet Skull, Laurels</div>
+        <p class="motif">Blackletter head, laurel wreath, crossed axes and rifles.</p>
+        <dl>
+          <dt>Shape</dt><dd>Circle</dd>
+          <dt>Pixels</dt><dd>494 × 500</dd>
+          <dt>300 dpi</dt><dd class="short">1.65″ × 1.67″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="plate"><img src="art/design-4.png" alt="Three snarling dogs above a pile of skulls on a camo shield, 666 below" width="500" height="589"></div>
+      <figcaption>
+        <div class="name">Dogs Over Skulls</div>
+        <p class="motif">The dog trio again, skull pile instead of helmet. Reads as a pair with the first.</p>
+        <dl>
+          <dt>Shape</dt><dd>Shield</dd>
+          <dt>Pixels</dt><dd>500 × 589</dd>
+          <dt>300 dpi</dt><dd class="short">1.67″ × 1.96″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="plate"><img src="art/design-5.png" alt="Winged skull over crossed rifles with 666 diamond on a camo circle" width="483" height="507"></div>
+      <figcaption>
+        <div class="name">Winged Skull, Rifles</div>
+        <p class="motif">Cleanest lockup of the six. Reads smallest, so it survives shrinking best.</p>
+        <dl>
+          <dt>Shape</dt><dd>Circle</dd>
+          <dt>Pixels</dt><dd>483 × 507</dd>
+          <dt>300 dpi</dt><dd class="short">1.61″ × 1.69″</dd>
+        </dl>
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="warn">
+    <h2>Before any of this goes to print</h2>
+    <p>
+      These crops came out of a 1500 × 1500 sheet, so each mark is roughly 500 px across.
+      That is <b>about 1.6 inches at 300 dpi</b> — a hat patch and nothing larger. Every
+      number above is measured, not estimated.
+    </p>
+    <div class="scroll">
+      <table>
+        <tr><th>Use</th><th>Needs at 300 dpi</th><th>These give you</th></tr>
+        <tr><td>Hat / sleeve patch, 2″</td><td>600 px</td><td>Workable</td></tr>
+        <tr><td>Left chest, 4″</td><td>1200 px</td><td>Short by half</td></tr>
+        <tr><td>Back patch, 10″</td><td>3000 px</td><td>Short by 6×</td></tr>
+        <tr><td>Full shirt front, 12″</td><td>3600 px</td><td>Short by 7×</td></tr>
+      </table>
+    </div>
+    <p style="margin-top:14px">
+      So keep whatever your model wrote out <b>before</b> it built the sheet. If it only ever
+      emitted the sheet, re-run the keepers one at a time at the largest size the model allows
+      — upscaling a 500 px crop invents fur and lettering that was never there, and it shows
+      worst in exactly the places these designs live: the dog coats, the drip edges, and the
+      thin bone type in the banners.
+    </p>
+  </div>
+</div>
