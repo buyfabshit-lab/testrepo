@@ -127,7 +127,9 @@
   Your 3D render underneath, with the water drawn over it as transparent white line work: long jagged strands, straight run to straight run, kinking slightly at every vertex. The
   bends carry the ripple and <b>nothing is ever curved</b>. The lines are lit by their own
   slope, so a strand brightens where it climbs hardest and all but disappears where it runs
-  flat, which keeps the overlay off the letterforms instead of across them.
+  flat, which keeps the overlay off the letterforms instead of across them. Near the end of
+  each loop a whale breaches: the same strands, clipped to a silhouette, so what comes up out
+  of the sea <b>is the sea</b> rather than a picture laid over it.
 </p>
 
 <script>
@@ -208,8 +210,133 @@
     }
   }
 
+  /* ---------------------------------------------------------------------
+     The breach. Drawn in the same language as the water — the whale is not an
+     outline with a fill, it is a body of the same jagged strands, clipped to a
+     silhouette. So it reads as the water standing up rather than as a picture
+     of an animal laid over it.
+
+     It is keyed to the video's own clock, not to wall time, so the breach
+     lands at the same point of every loop.
+  --------------------------------------------------------------------- */
+  const BREACH_IN = 6.1, BREACH_OUT = 9.7;
+
+  /**
+   * A humpback, nose at +x, in units of body length. Three things carry the
+   * read: a long slim body rather than a fish's deep one, flukes that fan wide
+   * and shallow because they are horizontal and seen edge-on, and a pectoral
+   * nearly a third of the body long — the one feature nothing else in the sea
+   * has, and the reason a shape this abstract still says whale.
+   */
+  function whalePath(place) {
+    const path = new Path2D();
+    const to = (x, y) => place(x, y);
+    const start = to(0.5, 0.0);
+    path.moveTo(start[0], start[1]);
+    const curve = (a, b, c, d, e, f) => {
+      const p1 = to(a, b), p2 = to(c, d), p3 = to(e, f);
+      path.bezierCurveTo(p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]);
+    };
+    const line = (x, y) => { const q = to(x, y); path.lineTo(q[0], q[1]); };
+
+    curve(0.50, -0.08, 0.45, -0.15, 0.33, -0.16);    // blunt brow
+    curve(0.16, -0.17, -0.04, -0.16, -0.20, -0.12);  // long back
+    curve(-0.29, -0.10, -0.35, -0.07, -0.38, -0.05); // down to the peduncle
+    line(-0.44, -0.03);
+    line(-0.62, -0.13);                              // fluke, wide and shallow
+    curve(-0.51, -0.02, -0.51, 0.02, -0.62, 0.13);   // through the notch
+    line(-0.44, 0.03);
+    curve(-0.30, 0.11, -0.12, 0.17, 0.08, 0.19);     // belly, deep at the throat
+    curve(0.30, 0.20, 0.45, 0.14, 0.5, 0.0);         // chin
+    path.closePath();
+
+    const f0 = to(0.12, 0.07);
+    path.moveTo(f0[0], f0[1]);
+    curve(0.02, 0.23, -0.14, 0.37, -0.31, 0.43);     // the long pectoral
+    curve(-0.25, 0.28, -0.08, 0.14, 0.06, 0.04);
+    path.closePath();
+    return path;
+  }
+
+  /** Short jagged ticks where the body is tearing through the surface. */
+  function spray(x, y, amount, t) {
+    if (amount <= 0.01) return;
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 22; i++) {
+      const a = -Math.PI / 2 + (i / 22 - 0.5) * 2.1;
+      const n = Math.sin(i * 12.9898 + t * 3.1) * 0.5 + 0.5;
+      const len = (10 + n * 54) * amount;
+      ctx.strokeStyle = `rgba(244,248,247,${(0.1 + n * 0.3) * amount})`;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(a) * 6, y);
+      ctx.lineTo(x + Math.cos(a) * (6 + len * 0.75), y + Math.sin(a) * len);
+      ctx.stroke();
+    }
+  }
+
+  function drawWhale(vt, t) {
+    if (!on || vt < BREACH_IN || vt > BREACH_OUT) return;
+    const u = (vt - BREACH_IN) / (BREACH_OUT - BREACH_IN);
+    const surface = H * 0.66;
+    const L = Math.min(W * 0.4, H * 0.62);
+
+    // Position on the arc, and the heading taken from the arc itself, so the
+    // whale pitches up on the way out and goes in nose first.
+    const at = (k) => [
+      W * (0.26 + 0.42 * k),
+      surface + L * 0.5 - Math.sin(Math.PI * clamp(k, 0, 1)) * H * 0.82,
+    ];
+    const [cx, cy] = at(u);
+    const [nx, ny] = at(u + 0.012);
+    const rot = Math.atan2(ny - cy, nx - cx);
+
+    const cos = Math.cos(rot), sin = Math.sin(rot);
+    const place = (lx, ly) => [cx + (lx * cos - ly * sin) * L, cy + (lx * sin + ly * cos) * L];
+
+    ctx.save();
+    const body = whalePath(place);
+    ctx.clip(body);
+
+    // The sea's own strands, horizontal exactly as they are outside, just
+    // closer together and brighter. The whale is a window onto denser water,
+    // not a wireframe drawn over it.
+    const inner = Math.max(6, H / 74);
+    const x0 = cx - L * 0.8, x1 = cx + L * 0.8;
+    const step = Math.max(26, W / 34);
+    for (let y = cy - L * 0.85; y <= cy + L * 0.85; y += inner) {
+      let prev = 0, steepest = 0;
+      ctx.beginPath();
+      for (let x = x0; x <= x1; x += step) {
+        const py = y + height(x, y, t) * inner * 2.1;
+        if (x === x0) ctx.moveTo(x, py);
+        else {
+          ctx.lineTo(x, py);
+          const slope = Math.abs(py - prev) / step;
+          if (slope > steepest) steepest = slope;
+        }
+        prev = py;
+      }
+      const lit = clamp(steepest * 1.6, 0, 1);
+      ctx.strokeStyle = `rgba(244,248,247,${0.16 + lit * 0.34})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // The silhouette itself, just enough to hold the shape together.
+    ctx.strokeStyle = "rgba(244,248,247,0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke(body);
+
+    // Water tearing at the exit and again at the re-entry.
+    spray(cx, surface, clamp(1 - u * 5, 0, 1), t);
+    spray(cx, surface, clamp((u - 0.82) * 5, 0, 1), t);
+  }
+
   function frame(now) {
-    drawLines(now / 1000);
+    const t = now / 1000;
+    drawLines(t);
+    drawWhale(video.currentTime || 0, t);
     raf = requestAnimationFrame(frame);
   }
 
@@ -228,8 +355,9 @@
   replayBtn.addEventListener("click", () => {
     try {
       video.currentTime = 0;
-      void video.play();
-    } catch { /* a browser that refuses the seek still has the loop running */ }
+    } catch { /* not seekable; the reload below covers it */ }
+    if (video.currentTime > 0.25) video.load();   // no range requests: start it over
+    void video.play().catch(() => {});
   });
 
   toggleBtn.addEventListener("click", () => {
