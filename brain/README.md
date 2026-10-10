@@ -34,6 +34,27 @@ is safe: bubble ids are derived from the repo and the thing they came from, so
 a second run updates bubbles instead of duplicating them, and anything you
 typed yourself is left alone.
 
+## The look
+
+The bubbles sit in a field. A lattice is drawn behind the canvas and every
+bubble bends it toward itself — the bigger the bubble, the deeper the well —
+and the field is expelled from inside the mass it bends around, so it piles up
+into a halo at each rim and leaves the glass clear enough to read through. It
+is the Higgs picture borrowed as an interface: the field is everywhere, and all
+you can see of it is where something is interacting with it.
+
+The bubbles themselves are lit chrome: a translucent body so the lattice
+carries straight through, a bevelled rim that runs hot where it faces the light
+and near-black on the far side, a reflected horizon, and a hard specular. The
+key light follows your pointer, so moving the mouse sweeps the highlights
+across every sphere at once, the way one distant source would.
+
+It is drawn in two layers for a reason — the warped lattice is a few thousand
+primitives a frame, which belongs on a 2D canvas, while the spheres are a few
+hundred nodes that benefit from being real SVG you can click. Both sleep when
+the simulation settles, and the field skips any redraw that would paint an
+identical frame.
+
 ## The idea
 
 Most note apps make you file a thought before you understand it. This one lets
