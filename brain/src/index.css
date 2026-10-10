@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #07070c;
+  --color-deep: #0d0d16;
+  --color-haze: #16161f;
+  --color-edge: #2a2a39;
+  --color-mist: #8a8aa3;
+  --color-chalk: #e8e8f2;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  color: var(--color-chalk);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* The canvas owns wheel and drag gestures; the page itself never scrolls. */
+.canvas-surface {
+  touch-action: none;
+  cursor: grab;
+}
+.canvas-surface:active {
+  cursor: grabbing;
+}
+
+.bubble {
+  cursor: pointer;
+  transition: opacity 180ms ease;
+}
+
+/* A newly captured bubble announces itself once, then settles. */
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.arriving {
+  animation: arrive 420ms cubic-bezier(0.2, 1.2, 0.35, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes pulse-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+.thinking-ring {
+  animation: pulse-ring 1.4s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.panel {
+  background: color-mix(in oklab, var(--color-deep) 88%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--color-edge);
+}
+
+textarea,
+input {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arriving,
+  .thinking-ring {
+    animation: none;
+  }
+}
