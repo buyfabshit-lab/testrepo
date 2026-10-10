@@ -210,7 +210,7 @@
       const sw = c.measureText(scriptText).width;
       const tail = W * 0.075 * fit / 0.9;
       // The script begins inside the ring's right edge, the way the mark laps them.
-      const width = ringR * 2 + ringR * 0.45 + sw + tail;
+      const width = ringR * 2 + ringR * 0.72 + sw + tail;
       return { ringR, scriptSize, sw, tail, width };
     };
 
@@ -235,9 +235,12 @@
 
     c.font = `${g.scriptSize}px "Great Vibes", cursive`;
     c.textBaseline = "alphabetic";
-    const scriptX = ringX + g.ringR * 0.45;
+    const scriptX = ringX + g.ringR * 0.72;
     const scriptY = ringY + g.scriptSize * 0.3;
     c.fillText(scriptText, scriptX, scriptY);
+    c.lineJoin = "round";
+    c.lineWidth = g.scriptSize * 0.035;
+    c.strokeText(scriptText, scriptX, scriptY);
 
     // The swash: a long tapering rule running off the final letter.
     const tailY = scriptY + H * 0.012;
@@ -248,21 +251,23 @@
     c.stroke();
 
     // SPORTSWEAR, tracked out by hand so the spacing is exact.
-    const subSize = Math.max(10, g.scriptSize * 0.2);
+    const subSize = Math.max(11, g.scriptSize * 0.23);
     c.font = `600 ${subSize}px "Cormorant Garamond", Georgia, serif`;
     const track = subSize * 0.44;
     let subW = -track;
     for (const ch of SUBMARK) subW += c.measureText(ch).width + track;
     let sx = scriptX + g.sw * 0.5 - subW * 0.5;
     const sy = scriptY + subSize * 1.45;
+    c.lineWidth = subSize * 0.07;
     for (const ch of SUBMARK) {
       c.fillText(ch, sx, sy);
+      c.strokeText(ch, sx, sy);
       sx += c.measureText(ch).width + track;
     }
 
     // Read the ink back as points.
     const data = c.getImageData(0, 0, off.width, off.height).data;
-    const step = Math.max(2, Math.round(H / 200));
+    const step = Math.max(1, Math.round(H / 420));
     const found = [];
     for (let y = 0; y < off.height; y += step) {
       for (let x = 0; x < off.width; x += step) {
@@ -293,13 +298,13 @@
      spends the whole sequence travelling to it.
   --------------------------------------------------------------------- */
   function build() {
-    const budget = W < 620 ? 2800 : W < 980 ? 4600 : 6800;
+    const budget = W < 620 ? 2600 : W < 980 ? 4000 : 5600;
     const targets = sampleWordmark(budget, { fit: 0.9, cx: W / 2, cy: H * 0.44 });
     // The wave carries more water than the mark keeps. The surplus is what
     // drains back, and draining is what reveals the mark — it is left behind
     // by water leaving, not built by water arriving.
     const marks = targets.length / 2;
-    const surplus = Math.round(marks * 0.7);
+    const surplus = Math.round(marks * 0.5);
     // The same mark again, small and in the corner — where it lands once the
     // wind has taken the big one. Same water, just less of it.
     const header = sampleWordmark(1500, { fit: 0.3, cx: W * 0.2, cy: H * 0.12 });
@@ -654,7 +659,7 @@
         const lit = p.lit;
         const sh = sharpness(p);
         const soft = p.size * (1.9 + lit * 2.1);
-        const tight = p.size * (0.6 + lit * 0.45);
+        const tight = (1.2 + p.size * 0.42) * (1 + lit * 0.22);
         let r = soft + (tight - soft) * sh;
         let alpha = hardPass ? 0.55 + lit * 0.45 : 0.34 + lit * 0.5;
         if (windAt >= 0 && !p.keeps) {
